@@ -317,20 +317,22 @@
 
     status.textContent = `✅ Scanned ${pc} questions. Opening AI...`;
     showToast("Questions extracted! Switching to AI...", "success");
-    
-    const prompt = `Act as an intelligent form-filler. ${customInstructions ? `RULE: ${customInstructions}` : ""}
+    const selectedAi = aiSelect.value;
+    const prompt = `SEARCH THE INTERNET for the most recent and factual information before answering. 
+    Act as an intelligent form-filler. ${customInstructions ? `RULE: ${customInstructions}` : ""}
 
-CRITICAL:
-1. Output ONLY a valid JSON object. No other text.
-2. JSON keys must be question numbers (e.g., "1", "2").
-3. For [RADIO], [DROPDOWN], and [CHECKBOX], use ONLY the lowercase letter (e.g., "a", "b"). DO NOT write the option text.
-4. For [CHECKBOX], use an array of letters (e.g., ["a", "c"]).
-5. For [TEXT] or [TEXTAREA], provide a high-quality written response.
+    CRITICAL:
+    1. Use your search capabilities to ensure accuracy for every question.
+    2. Output ONLY a valid JSON object. No other text.
+    3. JSON keys must be question numbers (e.g., "1", "2").
+    4. For [RADIO], [DROPDOWN], and [CHECKBOX], use ONLY the lowercase letter (e.g., "a", "b"). DO NOT write the option text.
+    5. For [CHECKBOX], use an array of letters (e.g., ["a", "c"]).
+    6. For [TEXT] or [TEXTAREA], provide a high-quality, fact-checked written response.
 
-QUESTIONS:
-${list}
+    QUESTIONS:
+    ${list}
 
-JSON:`;
+    JSON:`;
 
     let url = "";
     if (selectedAi === "claude") {
