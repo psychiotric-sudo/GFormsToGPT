@@ -170,6 +170,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const gFormTabId = sender.tab.id;
     chrome.tabs.create({ url: request.url, active: true }, (tab) => {
       tabMap.set(tab.id, gFormTabId);
+      // Focus the new ChatGPT tab
+      chrome.tabs.update(tab.id, { active: true });
       sendResponse({ success: true, tabId: tab.id });
     });
     return true;
@@ -177,6 +179,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const chatGptTabId = sender.tab.id;
     const gFormTabId = tabMap.get(chatGptTabId);
     if (gFormTabId) {
+      // Focus back to the Google Form tab
+      chrome.tabs.update(gFormTabId, { active: true });
       chrome.tabs.sendMessage(gFormTabId, {
         action: "autoFillForm",
         data: request.data,

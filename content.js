@@ -175,6 +175,9 @@
 
   scanBtn.onclick = async () => {
     log("Scan button clicked");
+    status.textContent = "🔍 Initializing scan...";
+    showToast("Starting form scan...", "info");
+    
     extractFormMetadata();
     const sk = `gform_count_${formId}`;
     const sd = await chrome.storage.local.get([sk]);
@@ -187,6 +190,8 @@
     let list = "";
     const types = new Set();
 
+    status.textContent = "🔍 Scanning questions...";
+
     for (const c of containers) {
       let h = c.querySelector('[role="heading"]') || c.querySelector('legend');
       if (!h) continue;
@@ -194,7 +199,7 @@
       // Visual feedback during scan
       c.style.transition = "outline 0.3s ease";
       c.style.outline = "2px solid #3d5a80";
-      await sleepAsync(100);
+      await sleepAsync(50); // Faster scan but still visible
       
       let txt = h.textContent.trim();
       if (c.querySelector('img')) txt += " [Contains Image]";
@@ -231,7 +236,7 @@
         const drp = c.querySelector('[role="combobox"], [role="button"][aria-haspopup]');
         if (drp) {
           qd.type = "dropdown"; qd.dropdownTrigger = drp;
-          drp.click(); await sleepAsync(350);
+          drp.click(); await sleepAsync(300);
           const os = document.querySelectorAll('[role="option"]');
           let oi = 0;
           os.forEach(el => {
@@ -241,7 +246,7 @@
               oi++;
             }
           });
-          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await sleepAsync(200);
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await sleepAsync(150);
         }
       }
 
@@ -266,13 +271,13 @@
       list += `Q${qc}. [${qd.type.toUpperCase()}] ${txt}\n`;
       qd.options.forEach(o => list += `   ${o.letter}) ${o.text}\n`);
       list += "\n";
-      await sleepAsync(50);
+      await sleepAsync(20);
       c.style.outline = "";
     }
 
     if (!pc) { 
       status.textContent = "❌ No questions found."; 
-      showToast("No questions found! Try scrolling down to load the form.", "error");
+      showToast("No questions found! Make sure the form is fully loaded.", "error");
       return; 
     }
 
@@ -280,8 +285,8 @@
     await chrome.storage.local.set({ [sk]: qc });
     resetBtn.textContent = `🔄 Reset Count (${qc})`;
 
-    status.textContent = `✅ Found ${pc} questions! Opening ChatGPT...`;
-    showToast(`Scanned ${pc} questions`, "success");
+    status.textContent = `✅ Scanned ${pc} questions. Opening ChatGPT...`;
+    showToast("Questions extracted! Switching to ChatGPT...", "success");
     
     const prompt = `Act as an intelligent form-filler. ${customInstructions ? `RULE: ${customInstructions}` : ""}
 
@@ -312,12 +317,13 @@ JSON:`;
       ans = JSON.parse(m[0]);
     } catch (e) {
       status.textContent = "❌ Invalid JSON.";
-      showToast("Invalid JSON from ChatGPT!", "error");
+      showToast("AI response invalid. Check manually.", "error");
       chrome.runtime.sendMessage({ action: "reportError", payload: { errorType: "JSON_ERROR", message: e.message } });
       return;
     }
 
-    status.textContent = "⏳ Filling...";
+    status.textContent = "⏳ Auto-filling form...";
+    showToast("JSON received! Starting auto-fill...", "success");
     let f=0, t=0;
 
     for (const q of questionMap.values()) {
