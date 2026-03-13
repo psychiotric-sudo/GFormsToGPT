@@ -81,13 +81,16 @@
             highlightElement(textarea);
             
             if (sendBtn) {
-                console.log("🖱️ [GFormToGPT ChatGPT] Clicking send button...");
+                console.log("🖱️ [GFormToGPT ChatGPT] Clicking send button in 1s...");
                 highlightElement(sendBtn, "#4caf50");
-                sendBtn.click();
-                // Fallback for some ChatGPT versions where click() isn't enough
+                
                 setTimeout(() => {
-                    if (sendBtn) sendBtn.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
-                }, 500);
+                    sendBtn.click();
+                    // Fallback for some ChatGPT versions where click() isn't enough
+                    setTimeout(() => {
+                        if (sendBtn) sendBtn.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
+                    }, 500);
+                }, 1000); // 1 second delay
             }
         } else if (textarea) {
             // Force injection if ChatGPT didn't auto-fill from URL

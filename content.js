@@ -152,7 +152,19 @@
 
   const sec1 = document.createElement("div"); sec1.className = "gf-section";
   sec1.innerHTML = `<div class="gf-section-title">Step 1: Extract</div>`;
-  const scanBtn = document.createElement("button"); scanBtn.className = "gf-button gf-button-primary"; scanBtn.style.width="100%"; scanBtn.textContent = "🔍 Scan Form & Open ChatGPT";
+  
+  // ── AI Selection Dropdown ──
+  const aiSelect = document.createElement("select");
+  aiSelect.id = "gf-ai-select";
+  aiSelect.style.cssText = "width:100%; padding:10px; margin-bottom:8px; border:1px solid #ddd; border-radius:6px; font-family:inherit; font-size:13px; background:#fff;";
+  aiSelect.innerHTML = `
+    <option value="chatgpt">ChatGPT (Default)</option>
+    <option value="claude">Claude.ai</option>
+    <option value="gemini">Google Gemini</option>
+  `;
+  sec1.appendChild(aiSelect);
+
+  const scanBtn = document.createElement("button"); scanBtn.className = "gf-button gf-button-primary"; scanBtn.style.width="100%"; scanBtn.textContent = "🔍 Scan & Open AI";
   const resetBtn = document.createElement("button"); resetBtn.className = "gf-button gf-button-secondary"; resetBtn.style.width="100%"; resetBtn.style.marginTop="8px"; resetBtn.style.fontSize="11px"; resetBtn.textContent = "🔄 Reset Count";
   const filtNot = document.createElement("div"); filtNot.id = "gf-filtered-notice";
   sec1.appendChild(scanBtn); sec1.appendChild(resetBtn); sec1.appendChild(filtNot);
@@ -302,9 +314,10 @@
     await chrome.storage.local.set({ [sk]: qc });
     resetBtn.textContent = `🔄 Reset Count (${qc})`;
 
-    status.textContent = `✅ Scanned ${pc} questions. Opening ChatGPT...`;
-    showToast("Questions extracted! Switching to ChatGPT...", "success");
+    status.textContent = `✅ Scanned ${pc} questions. Opening AI...`;
+    showToast("Questions extracted! Switching to AI...", "success");
     
+    const selectedAi = aiSelect.value;
     const prompt = `Act as an intelligent form-filler. ${customInstructions ? `RULE: ${customInstructions}` : ""}
 
 CRITICAL:
@@ -319,7 +332,16 @@ ${list}
 
 JSON:`;
 
-    chrome.runtime.sendMessage({ action: "openChatGPT", url: `https://chatgpt.com/?prompt=${encodeURIComponent(prompt).replace(/%20/g, "+")}` });
+    let url = "";
+    if (selectedAi === "claude") {
+      url = `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
+    } else if (selectedAi === "gemini") {
+      url = `https://gemini.google.com/app?q=${encodeURIComponent(prompt)}`;
+    } else {
+      url = `https://chatgpt.com/?prompt=${encodeURIComponent(prompt).replace(/%20/g, "+")}`;
+    }
+
+    chrome.runtime.sendMessage({ action: "openAI", url: url, aiType: selectedAi });
   };
 
   fillBtn.onclick = async () => {

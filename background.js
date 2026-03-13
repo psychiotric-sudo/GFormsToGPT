@@ -181,7 +181,7 @@ chrome.action.onClicked.addListener((tab) => {
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "openChatGPT") {
+  if (request.action === "openAI") {
     if (!sender.tab) {
         sendResponse({ success: false, error: "No sender tab found" });
         return true;
@@ -189,7 +189,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const gFormTabId = sender.tab.id;
     chrome.tabs.create({ url: request.url, active: true }, (tab) => {
       tabMap.set(tab.id, gFormTabId);
-      // Focus the new ChatGPT tab
+      // Focus the new AI tab
       chrome.tabs.update(tab.id, { active: true }, (updatedTab) => {
         if (chrome.runtime.lastError) {
           console.warn("Could not focus tab:", chrome.runtime.lastError.message);

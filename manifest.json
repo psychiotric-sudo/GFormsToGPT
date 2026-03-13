@@ -16,6 +16,8 @@
   "host_permissions": [
     "https://docs.google.com/forms/*",
     "https://chatgpt.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
     "https://discord.com/*"
   ],
   "content_scripts": [
@@ -31,6 +33,16 @@
     {
       "matches": ["https://chatgpt.com/*"],
       "js": ["chatgpt_content.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://claude.ai/*"],
+      "js": ["claude_content.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["gemini_content.js"],
       "run_at": "document_end"
     }
   ],
