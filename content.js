@@ -190,11 +190,18 @@
     for (const c of containers) {
       let h = c.querySelector('[role="heading"]') || c.querySelector('legend');
       if (!h) continue;
+      
+      // Visual feedback during scan
+      c.style.transition = "outline 0.3s ease";
+      c.style.outline = "2px solid #3d5a80";
+      await sleepAsync(100);
+      
       let txt = h.textContent.trim();
       if (c.querySelector('img')) txt += " [Contains Image]";
 
       if (isPersonalQuestion(txt)) {
         questionMap.set(normalizeQuestionText(txt), { type: "filtered", container: c });
+        c.style.outline = "2px solid #fbc02d"; // Yellow for filtered
         continue;
       }
 
@@ -248,12 +255,19 @@
         if (a) { qd.type = "textarea"; qd.inputElement = a; }
       }
 
-      if (!qd.type) continue;
+      if (!qd.type) {
+        c.style.outline = "";
+        continue;
+      }
+      
+      c.style.outline = "2px solid #4caf50"; // Green for matched
       types.add(qd.type);
       questionMap.set(normalizeQuestionText(txt), qd);
       list += `Q${qc}. [${qd.type.toUpperCase()}] ${txt}\n`;
       qd.options.forEach(o => list += `   ${o.letter}) ${o.text}\n`);
       list += "\n";
+      await sleepAsync(50);
+      c.style.outline = "";
     }
 
     if (!pc) { 
@@ -268,8 +282,27 @@
 
     status.textContent = `✅ Found ${pc} questions! Opening ChatGPT...`;
     showToast(`Scanned ${pc} questions`, "success");
-    const prompt = `Answer these questions from a Google Form.\n${formTitle ? `TITLE: ${formTitle}\n` : ""}${formDescription ? `CONTEXT: ${formDescription}\n` : ""}${customInstructions ? `RULES: ${customInstructions}\n` : ""}Output ONLY JSON.\n\n${list}`;
-    chrome.runtime.sendMessage({ action: "openChatGPT", url: `https://chatgpt.com/?prompt=${encodeURIComponent(prompt).replace(/%20/g, "+")}&hints=search` });
+    
+    const prompt = `Act as a helpful and intelligent form-filler. I will provide you with a list of questions from a Google Form. 
+Your task is to analyze the title, context, and questions, then provide the most logical and appropriate answers.
+
+${formTitle ? `FORM TITLE: ${formTitle}\n` : ""}${formDescription ? `FORM CONTEXT: ${formDescription}\n` : ""}
+${customInstructions ? `USER RULES: ${customInstructions}\n` : ""}
+
+CRITICAL INSTRUCTIONS:
+1. Output ONLY a valid JSON object. No conversational text, no markdown code blocks, just the JSON.
+2. The JSON keys must be the Question Numbers (e.g., "1", "2").
+3. For [RADIO] and [DROPDOWN], return the letter of the best option (e.g., "a", "b").
+4. For [CHECKBOX], return an array of letters (e.g., ["a", "c"]).
+5. For [TEXT] and [TEXTAREA], provide a concise, high-quality written response.
+6. If a question is optional and you're unsure, you can skip it or provide a generic answer.
+
+QUESTIONS TO ANSWER:
+${list}
+
+Return ONLY the JSON object:`;
+
+    chrome.runtime.sendMessage({ action: "openChatGPT", url: `https://chatgpt.com/?prompt=${encodeURIComponent(prompt).replace(/%20/g, "+")}` });
   };
 
   fillBtn.onclick = async () => {
