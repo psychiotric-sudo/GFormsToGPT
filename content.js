@@ -138,8 +138,9 @@
   updateBanner.style.cssText = "display:none; background:#e8f1ff; border:1px solid #c5d9f1; border-radius:6px; padding:10px; margin-bottom:12px; border-left:4px solid #3d5a80;";
   updateBanner.innerHTML = `
     <div style="font-size:12px; font-weight:700; color:#1a237e; margin-bottom:4px;">✨ New Version Available!</div>
-    <div style="font-size:11px; color:#3d5a80; margin-bottom:8px;">A newer version is ready on GitHub.</div>
-    <a href="https://github.com/psychiotric-sudo/GFormsToGPT" target="_blank" style="display:block; background:#3d5a80; color:#fff; text-align:center; padding:6px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Update Now</a>
+    <div style="font-size:11px; color:#3d5a80; margin-bottom:8px;">1. Run <b>UPDATE.bat</b> in extension folder</div>
+    <div style="font-size:11px; color:#3d5a80; margin-bottom:8px;">2. Refresh extension in Chrome</div>
+    <div style="font-size:10px; color:#666; font-style:italic;">(Go to: chrome://extensions and click 🔄)</div>
   `;
   body.appendChild(updateBanner);
   body.appendChild(status);
