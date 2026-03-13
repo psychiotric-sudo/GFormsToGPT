@@ -317,7 +317,7 @@
 
     status.textContent = `✅ Scanned ${pc} questions. Opening AI...`;
     showToast("Questions extracted! Switching to AI...", "success");
-    const selectedAi = aiSelect.value;
+    
     const prompt = `SEARCH THE INTERNET for the most recent and factual information before answering. 
     Act as an intelligent form-filler. ${customInstructions ? `RULE: ${customInstructions}` : ""}
 
