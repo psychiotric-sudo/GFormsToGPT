@@ -66,8 +66,10 @@
       
       const checkInterval = setInterval(() => {
         const textarea = document.querySelector('#prompt-textarea');
+        // Expanded selectors for send button, including the new SVG-based one
         const sendBtn = document.querySelector('[data-testid="send-button"]') || 
                         document.querySelector('button[aria-label="Send prompt"]') ||
+                        document.querySelector('button:has(svg use[href*="#01bab7"])') || // New specific selector
                         document.querySelector('button.absolute.bottom-1\\.5');
         
         if (textarea && (textarea.value.length > 10 || textarea.innerText.length > 10)) { 
@@ -79,6 +81,7 @@
                 console.log("🖱️ [GFormToGPT ChatGPT] Clicking send button...");
                 highlightElement(sendBtn, "#4caf50");
                 sendBtn.click();
+                // Fallback for some ChatGPT versions where click() isn't enough
                 setTimeout(() => {
                     if (sendBtn) sendBtn.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
                 }, 500);
@@ -86,6 +89,7 @@
         } else if (textarea) {
             // Force injection if ChatGPT didn't auto-fill from URL
             if (textarea.value === "" && prompt) {
+                console.log("⌨️ [GFormToGPT ChatGPT] Manual injection needed...");
                 textarea.value = prompt;
                 textarea.dispatchEvent(new Event('input', { bubbles: true }));
             }
