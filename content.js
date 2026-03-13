@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  console.log("🚀 [GFormToGPT v3.3.0] Script execution started");
+  console.log(`🚀 [GFormToGPT v${chrome.runtime.getManifest().version}] Script execution started`);
 
   // ── Personal question filter keywords ──
   let personalKeywords = ["name", "full name", "email", "gmail", "section", "class", "grade", "year", "student number", "id", "phone", "contact", "address", "school"];

@@ -37,6 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
   document.getElementById("clear").classList.add("active");
   document.querySelector('[data-tab="clear"]').classList.add("active");
+  
+  // Set dynamic version display
+  document.getElementById('currentVersionDisplay').textContent = chrome.runtime.getManifest().version;
 });
 
 // Load settings
