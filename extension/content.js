@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  console.log("🚀 [GFormToGPT v3.2.1] Script execution started");
+  console.log("🚀 [GFormToGPT v3.2.3] Script execution started");
 
   // ── Personal question filter keywords ──
   let personalKeywords = ["name", "full name", "email", "gmail", "section", "class", "grade", "year", "student number", "id", "phone", "contact", "address", "school"];
@@ -12,18 +12,46 @@
   // Settings
   let customInstructions = "";
   let useHumanTyping = false; 
+  let verboseLogging = false;
   let formTitle = "";
   let formDescription = "";
 
   // Load settings
-  chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping"], (data) => {
+  chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping", "verboseLogging"], (data) => {
     if (data.customPrompt) customInstructions = data.customPrompt;
     if (data.humanTyping) useHumanTyping = data.humanTyping;
+    if (data.verboseLogging) verboseLogging = data.verboseLogging;
     if (data.ignoredKeywords) {
       const userKeywords = data.ignoredKeywords.split(",").map((k) => k.trim().toLowerCase()).filter(k => k);
       personalKeywords = [...new Set([...personalKeywords, ...userKeywords])];
     }
   });
+
+  function log(...args) {
+    if (verboseLogging) console.log("🔍 [GFormToGPT-Verbose]", ...args);
+  }
+
+  function showToast(message, type = "error") {
+    const toast = document.createElement("div");
+    toast.className = `gf-toast gf-toast-${type}`;
+    toast.textContent = message;
+    
+    let container = document.getElementById("gf-toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "gf-toast-container";
+      document.body.appendChild(container);
+    }
+    
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add("gf-toast-show");
+      setTimeout(() => {
+        toast.classList.remove("gf-toast-show");
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }, 10);
+  }
 
   function isPersonalQuestion(questionText) {
     const lowerText = questionText.toLowerCase();
@@ -39,7 +67,7 @@
       if (titleEl) formTitle = titleEl.textContent.trim();
       const descEl = document.querySelector('.freebirdFormviewerViewHeaderDescription') || document.querySelector('div[dir="auto"]');
       if (descEl && descEl !== titleEl) formDescription = descEl.textContent.trim().substring(0, 500);
-    } catch (e) { console.log("⚠️ Metadata error:", e); }
+    } catch (e) { log("Metadata error:", e); }
   }
 
   async function humanType(element, text) {
@@ -58,20 +86,19 @@
   let questionMap = new Map();
   let formId = window.location.pathname.split("/")[3] || "default";
 
-  // ── UI CONSTRUCTION (Safe way) ──
+  // ── UI CONSTRUCTION ──
   const style = document.createElement("style");
   style.textContent = `
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
-    #gf-panel{position:fixed;top:20px;right:20px;width:420px;background:#f5f5f5;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.25);z-index:2147483647;font-family:'Outfit',sans-serif;color:#202124;overflow:hidden;pointer-events:auto;user-select:none;}
+    #gf-panel{position:fixed;top:20px;right:20px;width:420px;background:#f5f5f5;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.25);z-index:2147483647;font-family:'Outfit',sans-serif;color:#202124;overflow:hidden;pointer-events:auto;}
     #gf-panel.minimized #gf-body {display:none;}
     #gf-header-top{background:linear-gradient(135deg, #3d5a80 0%, #2d4563 100%);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:grab;}
     #gf-title-text{font-size:15px;font-weight:700;color:#fff;margin:0;}
     #gf-minimize, #gf-close{background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
     #gf-minimize:hover, #gf-close:hover{background:rgba(255,255,255,0.4);}
-    #gf-body{padding:16px;max-height:600px;overflow-y:auto;background:#fff;user-select:text;}
+    #gf-body{padding:16px;max-height:600px;overflow-y:auto;background:#fff;}
     .gf-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e0e0e0;}
     .gf-section-title{font-size:12px;font-weight:600;color:#3d5a80;margin-bottom:8px;text-transform:uppercase;}
-    .gf-helper-text{font-size:12px;color:#666;margin-bottom:12px;line-height:1.4;}
     #gf-status{background:#e8f1ff;padding:12px;border-radius:6px;font-size:13px;margin-bottom:12px;color:#1a237e;border-left:4px solid #3d5a80;border:1px solid #c5d9f1;}
     .gf-btn-group{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
     #gf-output{width:100%;height:100px;padding:10px;border:1px solid #ddd;border-radius:6px;font-size:11px;font-family:monospace;resize:vertical;margin-bottom:12px;box-sizing:border-box;}
@@ -80,10 +107,16 @@
     .gf-button-success{background:#4caf50;color:#fff;}
     .gf-button-secondary{background:#e0e0e0;color:#333;}
     .gf-button:hover{filter:brightness(0.9);}
-    .gf-button:active{transform:scale(0.98);}
     #gf-filtered-notice{font-size:12px;color:#856404;background-color:#fff3cd;border:1px solid #ffeeba;padding:8px;border-radius:4px;margin-bottom:12px;display:none;}
     .gf-author{margin-top:16px;padding-top:12px;border-top:1px solid #e0e0e0;font-size:12px;color:#999;text-align:center;}
     .gf-author a{color:#3d5a80;text-decoration:none;font-weight:600;}
+    
+    #gf-toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 2147483647; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+    .gf-toast { padding: 12px 20px; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); pointer-events: auto; max-width: 350px; text-align: center; }
+    .gf-toast-show { opacity: 1; transform: translateY(0); }
+    .gf-toast-error { background: #ef4444; border-left: 4px solid #b91c1c; }
+    .gf-toast-success { background: #10b981; border-left: 4px solid #047857; }
+    .gf-toast-info { background: #3b82f6; border-left: 4px solid #1d4ed8; }
   `;
   document.head.appendChild(style);
 
@@ -100,7 +133,6 @@
   const status = document.createElement("div"); status.id = "gf-status"; status.textContent = "✅ Ready to Scan!";
   body.appendChild(status);
 
-  // Scan Section
   const sec1 = document.createElement("div"); sec1.className = "gf-section";
   sec1.innerHTML = `<div class="gf-section-title">Step 1: Extract</div>`;
   const scanBtn = document.createElement("button"); scanBtn.className = "gf-button gf-button-primary"; scanBtn.style.width="100%"; scanBtn.textContent = "🔍 Scan Form & Open ChatGPT";
@@ -109,13 +141,11 @@
   sec1.appendChild(scanBtn); sec1.appendChild(resetBtn); sec1.appendChild(filtNot);
   body.appendChild(sec1);
 
-  // Response Section
   const sec2 = document.createElement("div"); sec2.className = "gf-section";
   sec2.innerHTML = `<div class="gf-section-title">Step 2: Paste Response</div>`;
   const output = document.createElement("textarea"); output.id = "gf-output"; output.placeholder = "Paste ChatGPT JSON here...";
   sec2.appendChild(output); body.appendChild(sec2);
 
-  // Fill Section
   const sec3 = document.createElement("div"); sec3.className = "gf-section";
   sec3.innerHTML = `<div class="gf-section-title">Step 3: Fill</div>`;
   const bg = document.createElement("div"); bg.className = "gf-btn-group";
@@ -131,20 +161,20 @@
   panel.appendChild(body);
   document.body.appendChild(panel);
 
-  // ── Initial State ──
   chrome.storage.local.get([`gform_count_${formId}`]).then(d => {
     resetBtn.textContent = `🔄 Reset Count (${d[`gform_count_${formId}`] || 0})`;
   });
 
-  // ── Event Handlers ──
   minBtn.onclick = () => { panel.classList.toggle("minimized"); minBtn.textContent = panel.classList.contains("minimized") ? "+" : "−"; };
   closeBtn.onclick = () => { panel.style.display = "none"; };
-  resetBtn.onclick = async () => { await chrome.storage.local.remove(`gform_count_${formId}`); resetBtn.textContent = "🔄 Reset Count (0)"; status.textContent = "🔄 Counter Reset!"; };
-  clearBtn.onclick = () => { document.querySelectorAll('input[type="text"], textarea').forEach(i => i.value = ""); document.querySelectorAll('[role="checkbox"][aria-checked="true"]').forEach(c => c.click()); output.value = ""; status.textContent = "🗑️ Cleared!"; };
+  resetBtn.onclick = async () => { await chrome.storage.local.remove(`gform_count_${formId}`); resetBtn.textContent = "🔄 Reset Count (0)"; status.textContent = "🔄 Counter Reset!"; showToast("Counter reset successfully", "info"); };
+  clearBtn.onclick = () => { document.querySelectorAll('input[type="text"], textarea').forEach(i => i.value = ""); document.querySelectorAll('[role="checkbox"][aria-checked="true"]').forEach(c => c.click()); output.value = ""; status.textContent = "🗑️ Cleared!"; showToast("Form cleared", "info"); };
 
-  // ── SCAN ──
+  function sleepAsync(ms) { return new Promise(res => setTimeout(res, ms)); }
+  function normalizeQuestionText(t) { return t.toLowerCase().replace(/\s+/g, " ").trim(); }
+
   scanBtn.onclick = async () => {
-    console.log("🖱️ Scan clicked");
+    log("Scan button clicked");
     extractFormMetadata();
     const sk = `gform_count_${formId}`;
     const sd = await chrome.storage.local.get([sk]);
@@ -164,7 +194,7 @@
       if (c.querySelector('img')) txt += " [Contains Image]";
 
       if (isPersonalQuestion(txt)) {
-        questionMap.set(txt.toLowerCase().trim(), { type: "filtered", container: c });
+        questionMap.set(normalizeQuestionText(txt), { type: "filtered", container: c });
         continue;
       }
 
@@ -194,7 +224,7 @@
         const drp = c.querySelector('[role="combobox"], [role="button"][aria-haspopup]');
         if (drp) {
           qd.type = "dropdown"; qd.dropdownTrigger = drp;
-          drp.click(); await new Promise(r => setTimeout(res, 350));
+          drp.click(); await sleepAsync(350);
           const os = document.querySelectorAll('[role="option"]');
           let oi = 0;
           os.forEach(el => {
@@ -204,7 +234,7 @@
               oi++;
             }
           });
-          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await new Promise(r => setTimeout(r, 200));
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); await sleepAsync(200);
         }
       }
 
@@ -220,36 +250,41 @@
 
       if (!qd.type) continue;
       types.add(qd.type);
-      questionMap.set(txt.toLowerCase().trim(), qd);
+      questionMap.set(normalizeQuestionText(txt), qd);
       list += `Q${qc}. [${qd.type.toUpperCase()}] ${txt}\n`;
       qd.options.forEach(o => list += `   ${o.letter}) ${o.text}\n`);
       list += "\n";
     }
 
-    if (!pc) { status.textContent = "❌ No questions found. Try scrolling?"; return; }
+    if (!pc) { 
+      status.textContent = "❌ No questions found."; 
+      showToast("No questions found! Try scrolling down to load the form.", "error");
+      return; 
+    }
 
     chrome.runtime.sendMessage({ action: "reportStats", payload: { scannedCount: pc, types: Array.from(types).join(", ") } });
     await chrome.storage.local.set({ [sk]: qc });
     resetBtn.textContent = `🔄 Reset Count (${qc})`;
 
     status.textContent = `✅ Found ${pc} questions! Opening ChatGPT...`;
+    showToast(`Scanned ${pc} questions`, "success");
     const prompt = `Answer these questions from a Google Form.\n${formTitle ? `TITLE: ${formTitle}\n` : ""}${formDescription ? `CONTEXT: ${formDescription}\n` : ""}${customInstructions ? `RULES: ${customInstructions}\n` : ""}Output ONLY JSON.\n\n${list}`;
     chrome.runtime.sendMessage({ action: "openChatGPT", url: `https://chatgpt.com/?prompt=${encodeURIComponent(prompt).replace(/%20/g, "+")}&hints=search` });
   };
 
-  // ── FILL ──
   fillBtn.onclick = async () => {
     log("Fill button clicked");
     const tStart = Date.now();
-    if (!questionMap.size) { status.textContent = "⚠️ Scan first!"; return; }
+    if (!questionMap.size) { status.textContent = "⚠️ Scan first!"; showToast("Please scan the form first", "info"); return; }
 
     let ans;
     try {
       const m = output.value.match(/\{[\s\S]*\}/);
-      if (!m) throw new Error("No JSON");
+      if (!m) throw new Error("No JSON found");
       ans = JSON.parse(m[0]);
     } catch (e) {
       status.textContent = "❌ Invalid JSON.";
+      showToast("Invalid JSON from ChatGPT!", "error");
       chrome.runtime.sendMessage({ action: "reportError", payload: { errorType: "JSON_ERROR", message: e.message } });
       return;
     }
@@ -265,7 +300,7 @@
 
       q.container.style.outline = "3px solid #4caf50";
       q.container.scrollIntoView({ behavior: "smooth", block: "center" });
-      await new Promise(r => setTimeout(r, 150));
+      await sleepAsync(150);
 
       try {
         if (q.type === "radio") {
@@ -276,11 +311,11 @@
           let ok = false;
           for (const l of ls) {
             const o = q.options.find(o => o.letter === l);
-            if (o && o.element.getAttribute("aria-checked") !== "true") { o.element.click(); await new Promise(r => setTimeout(r, 80)); ok = true; }
+            if (o && o.element.getAttribute("aria-checked") !== "true") { o.element.click(); await sleepAsync(80); ok = true; }
           }
           if (ok) f++;
         } else if (q.type === "dropdown") {
-          q.dropdownTrigger.click(); await new Promise(r => setTimeout(r, 400));
+          q.dropdownTrigger.click(); await sleepAsync(400);
           const live = document.querySelectorAll('[role="option"]');
           const idx = q.options.findIndex(o => o.letter === String(val).toLowerCase());
           if (idx !== -1 && live[idx]) { live[idx].click(); f++; }
@@ -296,16 +331,16 @@
           }
           f++;
         }
-      } catch (e) { console.error(e); }
-      await new Promise(r => setTimeout(r, 200)); q.container.style.outline = "";
+      } catch (e) { log(e); }
+      await sleepAsync(200); q.container.style.outline = "";
     }
 
     const saved = Math.round((t * 10) - ((Date.now() - tStart) / 1000));
     status.textContent = `✅ Filled ${f}/${t}. Saved ~${saved}s!`;
+    showToast(`Filled ${f} answers!`, "success");
     chrome.runtime.sendMessage({ action: "trackFormFilled", payload: { filledCount: f, totalCount: t, secondsSaved: Math.max(0, saved) } });
   };
 
-  // ── Drag & Keyboard ──
   document.addEventListener("keydown", (e) => { if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "s") { e.preventDefault(); panel.style.display = panel.style.display === "none" ? "block" : "none"; } });
   let isDrag = false, ox = 0, oy = 0;
   header.onmousedown = (e) => { if (e.target.closest("button")) return; isDrag = true; ox = e.clientX - panel.offsetLeft; oy = e.clientY - panel.offsetTop; };
@@ -314,16 +349,7 @@
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "autoFillForm") {
-      output.value = request.rawJson;
-      fillBtn.click();
-      sendResponse({ success: true });
-    }
-    return true;
-  });
-
-})();
-istener((request, sender, sendResponse) => {
-    if (request.action === "autoFillForm") {
+      log("Auto-fill signal received");
       output.value = request.rawJson;
       fillBtn.click();
       sendResponse({ success: true });
