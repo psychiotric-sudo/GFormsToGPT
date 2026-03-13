@@ -46,20 +46,26 @@
       
       const checkInterval = setInterval(() => {
         const textarea = document.querySelector('#prompt-textarea');
-        const sendBtn = document.querySelector('[data-testid="send-button"], button[aria-label="Send prompt"]');
+        // Expanded selectors for send button
+        const sendBtn = document.querySelector('[data-testid="send-button"]') || 
+                        document.querySelector('button[aria-label="Send prompt"]') ||
+                        document.querySelector('button.absolute.bottom-1\\.5');
         
-        if (textarea && textarea.value.length > 10) { // If prefilled by ChatGPT via URL
+        if (textarea && textarea.value.length > 10) { 
             clearInterval(checkInterval);
             console.log("🚀 [GFormToGPT ChatGPT] Textarea filled. Triggering click...");
             highlightElement(textarea);
             
-            if (sendBtn && !sendBtn.disabled) {
+            if (sendBtn) {
+                console.log("🖱️ [GFormToGPT ChatGPT] Clicking send button...");
                 highlightElement(sendBtn, "#4caf50");
                 sendBtn.click();
+                // Fallback for some ChatGPT versions where click() isn't enough
+                setTimeout(() => {
+                    if (sendBtn) sendBtn.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
+                }, 500);
             }
         } else if (textarea) {
-            // If not prefilled but textarea exists, we might need to paste it ourselves
-            // Though usually ChatGPT handles URL ?prompt=...
             if (textarea.value === "" && prompt) {
                 console.log("⌨️ [GFormToGPT ChatGPT] Manual injection needed...");
                 textarea.value = prompt;

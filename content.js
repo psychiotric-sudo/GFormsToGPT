@@ -283,24 +283,19 @@
     status.textContent = `✅ Found ${pc} questions! Opening ChatGPT...`;
     showToast(`Scanned ${pc} questions`, "success");
     
-    const prompt = `Act as a helpful and intelligent form-filler. I will provide you with a list of questions from a Google Form. 
-Your task is to analyze the title, context, and questions, then provide the most logical and appropriate answers.
+    const prompt = `Act as an intelligent form-filler. ${customInstructions ? `RULE: ${customInstructions}` : ""}
 
-${formTitle ? `FORM TITLE: ${formTitle}\n` : ""}${formDescription ? `FORM CONTEXT: ${formDescription}\n` : ""}
-${customInstructions ? `USER RULES: ${customInstructions}\n` : ""}
+CRITICAL:
+1. Output ONLY a valid JSON object. No other text.
+2. JSON keys must be question numbers (e.g., "1", "2").
+3. For [RADIO], [DROPDOWN], and [CHECKBOX], use ONLY the lowercase letter (e.g., "a", "b"). DO NOT write the option text.
+4. For [CHECKBOX], use an array of letters (e.g., ["a", "c"]).
+5. For [TEXT] or [TEXTAREA], provide a high-quality written response.
 
-CRITICAL INSTRUCTIONS:
-1. Output ONLY a valid JSON object. No conversational text, no markdown code blocks, just the JSON.
-2. The JSON keys must be the Question Numbers (e.g., "1", "2").
-3. For [RADIO] and [DROPDOWN], return the letter of the best option (e.g., "a", "b").
-4. For [CHECKBOX], return an array of letters (e.g., ["a", "c"]).
-5. For [TEXT] and [TEXTAREA], provide a concise, high-quality written response.
-6. If a question is optional and you're unsure, you can skip it or provide a generic answer.
-
-QUESTIONS TO ANSWER:
+QUESTIONS:
 ${list}
 
-Return ONLY the JSON object:`;
+JSON:`;
 
     chrome.runtime.sendMessage({ action: "openChatGPT", url: `https://chatgpt.com/?prompt=${encodeURIComponent(prompt).replace(/%20/g, "+")}` });
   };
