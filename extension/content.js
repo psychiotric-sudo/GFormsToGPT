@@ -239,7 +239,7 @@
 
   // ── FILL ──
   fillBtn.onclick = async () => {
-    console.log("🖱️ Fill clicked");
+    log("Fill button clicked");
     const tStart = Date.now();
     if (!questionMap.size) { status.textContent = "⚠️ Scan first!"; return; }
 
@@ -313,6 +313,16 @@
   document.onmouseup = () => isDrag = false;
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "autoFillForm") {
+      output.value = request.rawJson;
+      fillBtn.click();
+      sendResponse({ success: true });
+    }
+    return true;
+  });
+
+})();
+istener((request, sender, sendResponse) => {
     if (request.action === "autoFillForm") {
       output.value = request.rawJson;
       fillBtn.click();

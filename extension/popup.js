@@ -23,16 +23,18 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
 const customPromptInput = document.getElementById("customPrompt");
 const ignoredKeywordsInput = document.getElementById("ignoredKeywords");
 const humanTypingInput = document.getElementById("humanTyping");
+const verboseLoggingInput = document.getElementById("verboseLogging");
 const saveSettingsBtn = document.getElementById("saveSettings");
 const settingsStatus = document.getElementById("settingsStatus");
 const updateNotice = document.getElementById("updateNotice");
 const newVersionSpan = document.getElementById("newVersion");
 
 // Load settings
-chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping", "updateAvailable"], (data) => {
+chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping", "verboseLogging", "updateAvailable"], (data) => {
   if (data.customPrompt) customPromptInput.value = data.customPrompt;
   if (data.ignoredKeywords) ignoredKeywordsInput.value = data.ignoredKeywords;
   if (data.humanTyping) humanTypingInput.checked = data.humanTyping;
+  if (data.verboseLogging) verboseLoggingInput.checked = data.verboseLogging;
   
   if (data.updateAvailable) {
     newVersionSpan.textContent = data.updateAvailable;
@@ -45,12 +47,14 @@ saveSettingsBtn.addEventListener("click", () => {
   const customPrompt = customPromptInput.value.trim();
   const ignoredKeywords = ignoredKeywordsInput.value.trim();
   const humanTyping = humanTypingInput.checked;
+  const verboseLogging = verboseLoggingInput.checked;
 
   chrome.storage.local.set(
     {
       customPrompt,
       ignoredKeywords,
       humanTyping,
+      verboseLogging,
     },
     () => {
       settingsStatus.className = "status success";
