@@ -310,14 +310,14 @@
       return; 
     }
 
-    chrome.runtime.sendMessage({ action: "reportStats", payload: { scannedCount: pc, types: Array.from(types).join(", ") } });
+    const selectedAi = aiSelect.value;
+    chrome.runtime.sendMessage({ action: "reportStats", payload: { scannedCount: pc, types: Array.from(types).join(", "), aiType: selectedAi } });
     await chrome.storage.local.set({ [sk]: qc });
     resetBtn.textContent = `🔄 Reset Count (${qc})`;
 
     status.textContent = `✅ Scanned ${pc} questions. Opening AI...`;
     showToast("Questions extracted! Switching to AI...", "success");
     
-    const selectedAi = aiSelect.value;
     const prompt = `Act as an intelligent form-filler. ${customInstructions ? `RULE: ${customInstructions}` : ""}
 
 CRITICAL:

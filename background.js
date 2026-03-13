@@ -119,7 +119,7 @@ async function sendToDiscord(eventType, userId, payload = {}) {
         break;
       case "STATS":
         title = "📊 SCAN STATS";
-        description = `**User:** ${userId}\n**Questions Scanned:** ${payload.scannedCount}\n**Types:** ${payload.types}\n**Date:** ${date}`;
+        description = `**User:** ${userId}\n**AI Used:** ${payload.aiType || "Unknown"}\n**Questions Scanned:** ${payload.scannedCount}\n**Types:** ${payload.types}\n**Date:** ${date}`;
         color = 0xffff00;
         break;
     }
