@@ -2,7 +2,7 @@
 
 const WEBHOOK_URL =
   "https://discord.com/api/webhooks/1476838384768127027/tdW3SXQXLVEi1skrNEwJt5Unoc-H0H372d1QdckqS0ZwT6i9W_9SdQF5UfqMAuSwLFvu";
-const GITHUB_MANIFEST_URL = "https://raw.githubusercontent.com/chqrlzz/userscript-gformstogpt/main/extension/manifest.json";
+const GITHUB_MANIFEST_URL = "https://raw.githubusercontent.com/psychiotric-sudo/userscript-gformstogpt/main/extension/manifest.json";
 const VERSION = "3.2.3";
 
 // ── Update Checker ──
