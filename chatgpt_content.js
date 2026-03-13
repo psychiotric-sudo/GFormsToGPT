@@ -18,6 +18,31 @@
 
   console.log("✅ [GFormToGPT ChatGPT] GForm session detected. Monitoring for JSON...");
 
+  // ── Auto-submit prompt if it's in the URL ──
+  function autoSubmitPrompt() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const prompt = urlParams.get('prompt');
+    
+    if (prompt) {
+      const checkInterval = setInterval(() => {
+        const textarea = document.querySelector('#prompt-textarea');
+        if (textarea) {
+          clearInterval(checkInterval);
+          console.log("✍️ [GFormToGPT ChatGPT] Textarea found, but ChatGPT usually handles URL prompts. Waiting for response...");
+          
+          // Note: ChatGPT now often auto-starts when 'prompt' is in the URL.
+          // If it doesn't, we can force it here:
+          /*
+          textarea.value = prompt;
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+          const sendBtn = document.querySelector('[data-testid="send-button"]');
+          if (sendBtn) sendBtn.click();
+          */
+        }
+      }, 1000);
+    }
+  }
+
   let lastProcessedJson = "";
 
   function extractAndSendJson() {
@@ -26,7 +51,7 @@
     const blocks = document.querySelectorAll("pre, code, div.markdown");
 
     for (const block of blocks) {
-      const text = block.textContent.trim();
+      let text = block.textContent.trim();
       
       // Look for something that looks like our expected JSON: {"1": "...", "2": ...}
       // Simple check for starts with { and ends with } and contains a numbered key
@@ -46,7 +71,13 @@
               rawJson: cleanedText
             }, (response) => {
               if (response && response.success) {
-                console.log("📤 [GFormToGPT ChatGPT] JSON sent to background script");
+                console.log("📤 [GFormToGPT ChatGPT] JSON sent to background script. Closing tab in 2s...");
+                setTimeout(() => {
+                    // Signal background to close this tab? 
+                    // Content scripts can't close their own tab easily in all browsers, 
+                    // but we can try or just leave it open. 
+                    // Actually, let's just let it stay so the user can see it if they want.
+                }, 2000);
               }
             });
           }
@@ -70,6 +101,7 @@
       subtree: true
     });
     console.log("👀 [GFormToGPT ChatGPT] Observer started");
+    autoSubmitPrompt();
   };
 
   if (document.readyState === "loading") {

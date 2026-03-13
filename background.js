@@ -2,8 +2,11 @@
 
 const WEBHOOK_URL =
   "https://discord.com/api/webhooks/1476838384768127027/tdW3SXQXLVEi1skrNEwJt5Unoc-H0H372d1QdckqS0ZwT6i9W_9SdQF5UfqMAuSwLFvu";
-const GITHUB_MANIFEST_URL = "https://raw.githubusercontent.com/psychiotric-sudo/userscript-gformstogpt/main/extension/manifest.json";
+const GITHUB_MANIFEST_URL =
+  "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/refs/heads/main/manifest.json";
 const VERSION = "3.2.3";
+
+const tabMap = new Map();
 
 // ── Update Checker ──
 async function checkForUpdates() {
@@ -16,14 +19,14 @@ async function checkForUpdates() {
     if (remoteVersion !== VERSION) {
       console.log(`🆕 [GFormToGPT] Update available: ${remoteVersion}`);
       chrome.storage.local.set({ updateAvailable: remoteVersion });
-      
+
       // Notify user via basic notification
       chrome.notifications.create({
         type: "basic",
         iconUrl: "icons/icon.png",
         title: "Update Available!",
         message: `GFormToGPT ${remoteVersion} is now available on GitHub. Please update for the latest features.`,
-        priority: 2
+        priority: 2,
       });
     }
   } catch (error) {
@@ -123,10 +126,15 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 // ── Track form filled event ──
 async function trackFormFilled(payload) {
   try {
-    const data = await chrome.storage.local.get(["userId", "formCount", "totalSecondsSaved"]);
+    const data = await chrome.storage.local.get([
+      "userId",
+      "formCount",
+      "totalSecondsSaved",
+    ]);
     let userId = data.userId || generateUserId();
     let formCount = (data.formCount || 0) + 1;
-    let totalSecondsSaved = (data.totalSecondsSaved || 0) + (payload.secondsSaved || 0);
+    let totalSecondsSaved =
+      (data.totalSecondsSaved || 0) + (payload.secondsSaved || 0);
 
     await chrome.storage.local.set({ userId, formCount, totalSecondsSaved });
     await sendToDiscord("FORM_FILLED", userId, { ...payload, formCount });
@@ -159,13 +167,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       chrome.tabs.sendMessage(gFormTabId, {
         action: "autoFillForm",
         data: request.data,
-        rawJson: request.rawJson
+        rawJson: request.rawJson,
       });
       sendResponse({ success: true });
     }
     return true;
   } else if (request.action === "trackFormFilled") {
-    trackFormFilled(request.payload).then(() => sendResponse({ success: true }));
+    trackFormFilled(request.payload).then(() =>
+      sendResponse({ success: true }),
+    );
     return true;
   } else if (request.action === "reportError") {
     chrome.storage.local.get(["userId"], (data) => {
@@ -178,7 +188,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   } else if (request.action === "clearChatGPTData") {
-    clearChatGPTData().then((res) => sendResponse({ success: true, message: res }));
+    clearChatGPTData().then((res) =>
+      sendResponse({ success: true, message: res }),
+    );
     return true;
   }
 });
