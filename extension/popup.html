@@ -1,0 +1,468 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap");
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 420px;
+        font-family: "Outfit", sans-serif;
+        padding: 0;
+        margin: 0;
+        background: #f5f5f5;
+        color: #202124;
+      }
+
+      .popup-container {
+        background: #f5f5f5;
+        min-height: 100vh;
+      }
+
+      .popup-header {
+        background: linear-gradient(135deg, #3d5a80 0%, #2d4563 100%);
+        padding: 16px;
+        color: #fff;
+        border-radius: 8px 8px 0 0;
+      }
+
+      .popup-header h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0px;
+      }
+
+      .popup-header .subtitle {
+        font-size: 12px;
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 4px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 0;
+        background: #fff;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 0;
+      }
+
+      .tab-btn {
+        flex: 1;
+        padding: 14px 16px;
+        background: transparent;
+        border: none;
+        color: #666;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: "Outfit", sans-serif;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .tab-btn.active {
+        color: #3d5a80;
+        border-bottom-color: #3d5a80;
+      }
+
+      .tab-btn:hover {
+        color: #3d5a80;
+      }
+
+      .popup-body {
+        padding: 16px;
+        max-height: 500px;
+        overflow-y: auto;
+        background: #fff;
+        border-radius: 0 0 8px 8px;
+      }
+
+      .popup-body::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .popup-body::-webkit-scrollbar-track {
+        background: #f5f5f5;
+      }
+
+      .popup-body::-webkit-scrollbar-thumb {
+        background: #3d5a80;
+        border-radius: 3px;
+      }
+
+      .popup-body::-webkit-scrollbar-thumb:hover {
+        background: #5a7ba8;
+      }
+
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .section {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #3d5a80;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .section-text {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.6;
+        margin: 0 0 8px 0;
+      }
+
+      .info-box {
+        background: #e8f1ff;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        margin-bottom: 12px;
+        color: #1a237e;
+        border-left: 4px solid #3d5a80;
+        border: 1px solid #c5d9f1;
+        border-left: 4px solid #3d5a80;
+        line-height: 1.5;
+      }
+
+      .warning-box {
+        background: #fff3cd;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        margin-bottom: 12px;
+        color: #856404;
+        border-left: 4px solid #ffc107;
+        border: 1px solid #fbbf24;
+        border-left: 4px solid #ffc107;
+        line-height: 1.5;
+      }
+
+      .danger-box {
+        background: #fee2e2;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        margin-bottom: 12px;
+        color: #7f1d1d;
+        border-left: 4px solid #ef4444;
+        border: 1px solid #fecaca;
+        border-left: 4px solid #ef4444;
+        line-height: 1.5;
+      }
+
+      .status {
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        margin-bottom: 12px;
+        display: none;
+        border-left: 4px solid transparent;
+        line-height: 1.5;
+      }
+
+      .status.success {
+        background: #dcfce7;
+        color: #166534;
+        border-left-color: #22c55e;
+        display: block;
+      }
+
+      .status.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border-left-color: #ef4444;
+        display: block;
+      }
+
+      .status.loading {
+        background: #dbeafe;
+        color: #1e40af;
+        border-left-color: #3b82f6;
+        display: block;
+      }
+
+      .btn-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .btn {
+        padding: 11px 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: "Outfit", sans-serif;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: none;
+        letter-spacing: 0px;
+      }
+
+      .btn-primary {
+        background: #3d5a80;
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(61, 90, 128, 0.2);
+      }
+
+      .btn-primary:hover {
+        background: #2d4563;
+        box-shadow: 0 4px 8px rgba(61, 90, 128, 0.3);
+      }
+
+      .btn-primary:active {
+        transform: scale(0.98);
+      }
+
+      .btn-primary:disabled {
+        background: #a0a0a0;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .btn-success {
+        background: #4caf50;
+        color: #fff;
+        box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+      }
+
+      .btn-success:hover {
+        background: #45a049;
+        box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+      }
+
+      .btn-success:active {
+        transform: scale(0.98);
+      }
+
+      .privacy-list {
+        margin: 8px 0;
+        padding-left: 20px;
+      }
+
+      .privacy-list li {
+        margin-bottom: 6px;
+        color: #666;
+        font-size: 13px;
+      }
+
+      .highlight-box {
+        background: #2d2620;
+        border: 1px solid #3d2d20;
+        border-left: 4px solid #b8956b;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 12px 0;
+        color: #c9a878;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .privacy-content a {
+        color: #3d5a80;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .privacy-content a:hover {
+        text-decoration: underline;
+      }
+
+      strong {
+        color: #1a237e;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="popup-container">
+      <div class="popup-header">
+        <h1>🛠️ GForm to GPT</h1>
+        <div class="subtitle">by @chqrlzz</div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="clear">Clear Data</button>
+        <button class="tab-btn" data-tab="settings">Settings</button>
+        <button class="tab-btn" data-tab="privacy">Privacy</button>
+      </div>
+
+      <div class="popup-body">
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+          <div id="updateNotice" class="section" style="display:none; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px; padding:8px;">
+            <div class="section-title" style="color:#856404;">✨ Update Available!</div>
+            <div class="section-text">A newer version (<span id="newVersion"></span>) is available on GitHub.</div>
+            <a href="https://github.com/chqrlzz/userscript-gformstogpt" target="_blank" class="btn btn-secondary" style="display:block; text-align:center; margin-top:4px; text-decoration:none;">Go to GitHub</a>
+          </div>
+
+          <div class="section">
+            <div class="section-title">⚙️ Customization</div>
+            <div class="section-text">
+              Customize how GFormToGPT interacts with ChatGPT.
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Filling Mode</div>
+            <label style="display:flex; align-items:center; cursor:pointer; font-size:12px;">
+              <input type="checkbox" id="humanTyping" style="margin-right:8px;"> 
+              Simulate Human Typing (Bypass Detection)
+            </label>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Custom Instructions</div>
+            <div class="section-text">
+              Add extra instructions to the prompt (e.g. "Answer in Spanish", "Be concise").
+            </div>
+            <textarea id="customPrompt" class="input-area" placeholder="e.g. Provide short answers only..." style="width:100%; height:60px; padding:8px; border:1px solid #ddd; border-radius:4px; font-family:sans-serif; font-size:12px; resize:vertical;"></textarea>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Ignored Keywords</div>
+            <div class="section-text">
+              Comma-separated words to skip (personal info).
+            </div>
+            <textarea id="ignoredKeywords" class="input-area" placeholder="name, email, phone..." style="width:100%; height:40px; padding:8px; border:1px solid #ddd; border-radius:4px; font-family:sans-serif; font-size:12px; resize:vertical;"></textarea>
+          </div>
+
+          <div class="section">
+            <button id="saveSettings" class="btn btn-primary" style="width:100%">Save Settings</button>
+            <div id="settingsStatus" class="status"></div>
+          </div>
+        </div>
+
+        <!-- Clear ChatGPT Data Tab -->
+        <div id="clear" class="tab-content active">
+          <div class="section">
+            <div class="section-title">🗑️ Clear ChatGPT Data</div>
+            <div class="section-text">
+              Remove your ChatGPT usage data, history, and cache from your
+              browser.
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Will be removed</div>
+            <div class="info-box">
+              • Chat history & conversations<br />
+              • Cached settings & preferences<br />
+              • Temporary data & session info
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="warning-box">
+              <strong>⚠️ Important:</strong><br />
+              Your login session should remain intact. If you're logged out, you
+              may need to refresh ChatGPT or check cookies manually.
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="btn-group">
+              <button id="clearBtn" class="btn btn-success"
+                >Clear ChatGPT Data Now</button
+              >
+            </div>
+            <div id="status" class="status"></div>
+          </div>
+        </div>
+
+        <!-- Privacy Policy Tab -->
+        <div id="privacy" class="tab-content">
+          <div class="section">
+            <div class="section-title">🔒 Privacy Policy</div>
+            <div class="section-text">
+              Your privacy is our top priority. We collect
+              <strong>zero personal information</strong>.
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">What We Track</div>
+            <div class="section-text">
+              To improve our service, we anonymously track:
+            </div>
+            <div class="info-box" style="margin-top: 8px">
+              • <strong>Installation events:</strong> When you first install<br />
+              • <strong>Form fill count:</strong> How many forms you've
+              filled<br /><br />
+              All tracking uses a random User ID (format:
+              <code>User-XXXX</code>) with no link to your identity.
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">❌ We Never Collect</div>
+            <div class="highlight-box">
+              • Your name, email, or any personal data<br />
+              • URLs of forms you visit<br />
+              • Form content or your answers<br />
+              • Your IP address or browsing history<br />
+              • Any ChatGPT account information
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">🔐 How Data Is Sent</div>
+            <div class="section-text">
+              Anonymous usage data is sent only to Discord webhooks for
+              monitoring purposes. These webhooks are secure and encrypted.
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">💡 Your Control</div>
+            <div class="section-text">
+              You have full control. The extension runs entirely on your device.
+              You can inspect our open-source code at any time to verify we're
+              telling the truth.
+            </div>
+          </div>
+
+          <div class="section" style="margin-bottom: 0">
+            <div class="section-title">❓ Questions?</div>
+            <div class="section-text">
+              Contact us at
+              <a href="https://t.me/chqrlzz" target="_blank"
+                >@chqrlzz on Telegram</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

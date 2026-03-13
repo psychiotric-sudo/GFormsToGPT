@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "GForm to GPT",
+  "version": "3.2.0",
+  "description": "Scan Google Forms, filter personal questions, and auto-fill with ChatGPT responses",
+  "author": "@chqrlzz",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "cookies",
+    "browsingData",
+    "storage",
+    "notifications",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://docs.google.com/forms/*",
+    "https://chatgpt.com/*",
+    "https://discord.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://docs.google.com/forms/d/*/viewform*",
+        "https://docs.google.com/forms/*/viewform*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["chatgpt_content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "GForm to GPT - Click to clear ChatGPT data",
+    "default_popup": "popup.html",
+    "default_icon": "icons/icon.svg"
+  },
+  "icons": {
+    "128": "icons/icon.svg"
+  }
+}
