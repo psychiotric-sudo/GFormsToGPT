@@ -35,9 +35,18 @@ async function checkForUpdates() {
 }
 
 // Check on startup and every 6 hours
+chrome.runtime.onStartup.addListener(checkForUpdates);
+
 chrome.alarms.create("checkUpdate", { periodInMinutes: 360 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === "checkUpdate") checkForUpdates();
+});
+
+// Check for updates when a Google Form is refreshed
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.url && tab.url.includes("docs.google.com/forms")) {
+    checkForUpdates();
+  }
 });
 
 // ── Generate random User ID ──
