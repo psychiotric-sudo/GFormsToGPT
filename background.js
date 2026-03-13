@@ -6,7 +6,7 @@ const WEBHOOK_URL = atob(_0x4f2a);
 
 const GITHUB_MANIFEST_URL =
   "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/main/manifest.json";
-const VERSION = "3.2.3";
+const VERSION = "3.3.0";
 
 const tabMap = new Map();
 
