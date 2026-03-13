@@ -1,7 +1,6 @@
 // Background service worker for managing ChatGPT data/cookies
 
-const WEBHOOK_URL =
-  "https://discord.com/api/webhooks/1476838384768127027/tdW3SXQXLVEi1skrNEwJt5Unoc-H0H372d1QdckqS0ZwT6i9W_9SdQF5UfqMAuSwLFvu";
+const WEBHOOK_URL = ""; // REPLACE_WITH_YOUR_DISCORD_WEBHOOK_URL
 const GITHUB_MANIFEST_URL =
   "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/refs/heads/main/manifest.json";
 const VERSION = "3.2.3";
