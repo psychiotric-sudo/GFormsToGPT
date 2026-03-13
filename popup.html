@@ -318,10 +318,19 @@
       <div class="popup-body">
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
-          <div id="updateNotice" class="section" style="display:none; background:#fff3cd; border:1px solid #ffeeba; border-radius:4px; padding:8px;">
-            <div class="section-title" style="color:#856404;">✨ Update Available!</div>
-            <div class="section-text">A newer version (<span id="newVersion"></span>) is available on GitHub.</div>
-            <a href="https://github.com/chqrlzz/userscript-gformstogpt" target="_blank" class="btn btn-secondary" style="display:block; text-align:center; margin-top:4px; text-decoration:none;">Go to GitHub</a>
+          <div id="updateNotice" class="section" style="display:none; background:#e8f1ff; border:1px solid #c5d9f1; border-radius:8px; padding:12px; margin-bottom:16px;">
+            <div class="section-title" style="color:#1a237e; margin-bottom:4px;">✨ Update Available!</div>
+            <div class="section-text" style="margin-bottom:8px;">A newer version (<strong id="newVersion"></strong>) is available on GitHub.</div>
+            <a href="https://github.com/psychiotric-sudo/GFormsToGPT" target="_blank" class="btn btn-success" style="display:block; text-align:center; text-decoration:none;">Download from GitHub</a>
+          </div>
+
+          <div class="section">
+            <div class="section-title">🚀 System</div>
+            <div class="btn-group">
+              <button id="checkUpdateBtn" class="btn btn-primary" style="width:100%">🔍 Check for Updates</button>
+            </div>
+            <div id="updateStatus" class="status"></div>
+            <div class="section-text" style="font-size: 11px; text-align: center;">Current Version: 3.2.3</div>
           </div>
 
           <div class="section">

@@ -28,6 +28,16 @@ const saveSettingsBtn = document.getElementById("saveSettings");
 const settingsStatus = document.getElementById("settingsStatus");
 const updateNotice = document.getElementById("updateNotice");
 const newVersionSpan = document.getElementById("newVersion");
+const checkUpdateBtn = document.getElementById("checkUpdateBtn");
+const updateStatus = document.getElementById("updateStatus");
+
+// Ensure "Clear" tab is active on load
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("clear").classList.add("active");
+  document.querySelector('[data-tab="clear"]').classList.add("active");
+});
 
 // Load settings
 chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping", "verboseLogging", "updateAvailable"], (data) => {
@@ -40,6 +50,37 @@ chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping", "ver
     newVersionSpan.textContent = data.updateAvailable;
     updateNotice.style.display = "block";
   }
+});
+
+// Manual Update Check
+checkUpdateBtn.addEventListener("click", () => {
+  checkUpdateBtn.disabled = true;
+  checkUpdateBtn.textContent = "Checking...";
+  updateStatus.className = "status loading";
+  updateStatus.textContent = "Fetching latest version...";
+  updateStatus.style.display = "block";
+
+  // Send message to background to trigger check
+  chrome.runtime.sendMessage({ action: "manualUpdateCheck" }, (response) => {
+    checkUpdateBtn.disabled = false;
+    checkUpdateBtn.textContent = "🔍 Check for Updates";
+    
+    if (response && response.updateAvailable) {
+      updateStatus.className = "status success";
+      updateStatus.textContent = `✓ New version ${response.version} found!`;
+      newVersionSpan.textContent = response.version;
+      updateNotice.style.display = "block";
+    } else if (response && response.error) {
+      updateStatus.className = "status error";
+      updateStatus.textContent = "✗ Error checking for updates.";
+    } else {
+      updateStatus.className = "status success";
+      updateStatus.textContent = "✓ You are on the latest version.";
+      updateNotice.style.display = "none";
+    }
+    
+    setTimeout(() => { updateStatus.style.display = "none"; }, 3000);
+  });
 });
 
 // Save settings

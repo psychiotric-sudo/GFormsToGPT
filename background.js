@@ -27,14 +27,19 @@ async function checkForUpdates() {
 
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "icons/icon.svg", // SVG is supported in some contexts, but if not, it falls back to default
+        iconUrl: "icons/icon.svg",
         title: "Update Available!",
         message: `GFormToGPT ${remoteVersion} is now available. Click to update.`,
         priority: 2,
       });
+      return { updateAvailable: true, version: remoteVersion };
+    } else {
+      chrome.storage.local.remove("updateAvailable");
+      return { updateAvailable: false, version: remoteVersion };
     }
   } catch (error) {
     console.error("❌ [GFormToGPT] Update check failed:", error);
+    return { error: true, message: error.message };
   }
 }
 
@@ -208,6 +213,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     clearChatGPTData().then((res) =>
       sendResponse({ success: true, message: res }),
     );
+    return true;
+  } else if (request.action === "manualUpdateCheck") {
+    checkForUpdates().then((res) => sendResponse(res));
     return true;
   }
 });
