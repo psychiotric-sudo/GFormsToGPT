@@ -32,6 +32,16 @@ async function checkForUpdates() {
         message: `GFormToGPT ${remoteVersion} is now available. Click to update.`,
         priority: 2,
       });
+
+      // Broadcast to all active GForm tabs
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          if (tab.url && tab.url.includes("docs.google.com/forms")) {
+            chrome.tabs.sendMessage(tab.id, { action: "updateAvailable", version: remoteVersion }).catch(() => {});
+          }
+        });
+      });
+
       return { updateAvailable: true, version: remoteVersion };
     } else {
       chrome.storage.local.remove("updateAvailable");

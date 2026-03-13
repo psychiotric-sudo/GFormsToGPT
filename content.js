@@ -131,7 +131,23 @@
 
   const body = document.createElement("div"); body.id = "gf-body";
   const status = document.createElement("div"); status.id = "gf-status"; status.textContent = "✅ Ready to Scan!";
+  
+  // ── Update Notice in Floating Panel ──
+  const updateBanner = document.createElement("div");
+  updateBanner.id = "gf-update-banner";
+  updateBanner.style.cssText = "display:none; background:#e8f1ff; border:1px solid #c5d9f1; border-radius:6px; padding:10px; margin-bottom:12px; border-left:4px solid #3d5a80;";
+  updateBanner.innerHTML = `
+    <div style="font-size:12px; font-weight:700; color:#1a237e; margin-bottom:4px;">✨ New Version Available!</div>
+    <div style="font-size:11px; color:#3d5a80; margin-bottom:8px;">A newer version is ready on GitHub.</div>
+    <a href="https://github.com/psychiotric-sudo/GFormsToGPT" target="_blank" style="display:block; background:#3d5a80; color:#fff; text-align:center; padding:6px; border-radius:4px; text-decoration:none; font-size:11px; font-weight:600;">Update Now</a>
+  `;
+  body.appendChild(updateBanner);
   body.appendChild(status);
+
+  // Check storage for update flag
+  chrome.storage.local.get(["updateAvailable"], (data) => {
+    if (data.updateAvailable) updateBanner.style.display = "block";
+  });
 
   const sec1 = document.createElement("div"); sec1.className = "gf-section";
   sec1.innerHTML = `<div class="gf-section-title">Step 1: Extract</div>`;
@@ -387,6 +403,8 @@ JSON:`;
       output.value = request.rawJson;
       fillBtn.click();
       sendResponse({ success: true });
+    } else if (request.action === "updateAvailable") {
+      updateBanner.style.display = "block";
     }
     return true;
   });
