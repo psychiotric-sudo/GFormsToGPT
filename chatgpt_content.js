@@ -72,7 +72,10 @@
                         document.querySelector('button:has(svg use[href*="#01bab7"])') || // New specific selector
                         document.querySelector('button.absolute.bottom-1\\.5');
         
-        if (textarea && (textarea.value.length > 10 || textarea.innerText.length > 10)) { 
+        const valLen = (textarea?.value || "").length;
+        const textLen = (textarea?.innerText || "").length;
+
+        if (textarea && (valLen > 10 || textLen > 10)) { 
             clearInterval(checkInterval);
             console.log("🚀 [GFormToGPT ChatGPT] Textarea filled. Triggering click...");
             highlightElement(textarea);

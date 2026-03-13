@@ -172,20 +172,36 @@ chrome.action.onClicked.addListener((tab) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "openChatGPT") {
+    if (!sender.tab) {
+        sendResponse({ success: false, error: "No sender tab found" });
+        return true;
+    }
     const gFormTabId = sender.tab.id;
     chrome.tabs.create({ url: request.url, active: true }, (tab) => {
       tabMap.set(tab.id, gFormTabId);
       // Focus the new ChatGPT tab
-      chrome.tabs.update(tab.id, { active: true });
+      chrome.tabs.update(tab.id, { active: true }, (updatedTab) => {
+        if (chrome.runtime.lastError) {
+          console.warn("Could not focus tab:", chrome.runtime.lastError.message);
+        }
+      });
       sendResponse({ success: true, tabId: tab.id });
     });
     return true;
   } else if (request.action === "chatGptResponseReceived") {
+    if (!sender.tab) {
+        sendResponse({ success: false, error: "No sender tab found" });
+        return true;
+    }
     const chatGptTabId = sender.tab.id;
     const gFormTabId = tabMap.get(chatGptTabId);
     if (gFormTabId) {
       // Focus back to the Google Form tab
-      chrome.tabs.update(gFormTabId, { active: true });
+      chrome.tabs.update(gFormTabId, { active: true }, (updatedTab) => {
+        if (chrome.runtime.lastError) {
+          console.warn("Could not focus back to form:", chrome.runtime.lastError.message);
+        }
+      });
       chrome.tabs.sendMessage(gFormTabId, {
         action: "autoFillForm",
         data: request.data,
