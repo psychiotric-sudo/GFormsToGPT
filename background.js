@@ -27,7 +27,7 @@ async function checkForUpdates() {
 
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "icons/icon.svg",
+        iconUrl: "icons/icon.png",
         title: "Update Available!",
         message: `GFormToGPT ${remoteVersion} is now available. Click to update.`,
         priority: 2,
