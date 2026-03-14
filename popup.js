@@ -194,3 +194,27 @@ if (viewFullLegalBtn) {
     chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html#legal") });
   });
 }
+
+// ── Developer Modal Logic ──
+const developerModal = document.getElementById("developerModal");
+const openDevModalBtn = document.getElementById("openDevModalBtn");
+const closeDevModal = document.getElementById("closeDevModal");
+
+if (openDevModalBtn && developerModal) {
+  openDevModalBtn.addEventListener("click", () => {
+    developerModal.style.display = "block";
+  });
+}
+
+if (closeDevModal && developerModal) {
+  closeDevModal.addEventListener("click", () => {
+    developerModal.style.display = "none";
+  });
+}
+
+// Close modal when clicking outside
+window.addEventListener("click", (event) => {
+  if (event.target === developerModal) {
+    developerModal.style.display = "none";
+  }
+});
