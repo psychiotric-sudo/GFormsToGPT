@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  console.log("🚀 [GFormToGPT Claude] Script loaded");
+  console.log("[GFormToGPT Claude] Script loaded");
 
   const isGFormSession = window.location.href.includes("q=") || document.referrer.includes("docs.google.com/forms");
   if (!isGFormSession) return;
@@ -18,7 +18,7 @@
     const prompt = urlParams.get('q');
     
     if (prompt) {
-      console.log("📝 [GFormToGPT Claude] Prompt found, attempting auto-submit...");
+      console.log("[GFormToGPT Claude] Prompt found, attempting auto-submit...");
       const checkInterval = setInterval(() => {
         // Claude uses a contenteditable div for input
         const editor = document.querySelector('[contenteditable="true"]');
@@ -36,7 +36,7 @@
           
           setTimeout(() => {
             if (sendBtn && !sendBtn.disabled) {
-              console.log("🖱️ [GFormToGPT Claude] Clicking send button...");
+              console.log("[GFormToGPT Claude] Clicking send button...");
               highlightElement(sendBtn, "#4caf50");
               sendBtn.click();
             }

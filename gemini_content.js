@@ -2,7 +2,7 @@
 (function () {
   "use strict";
 
-  console.log("🚀 [GFormToGPT Gemini] Script loaded");
+  console.log("[GFormToGPT Gemini] Script loaded");
 
   const isGFormSession = window.location.href.includes("q=") || document.referrer.includes("docs.google.com/forms");
   if (!isGFormSession) return;
@@ -18,7 +18,7 @@
     const prompt = urlParams.get('q');
     
     if (prompt) {
-      console.log("📝 [GFormToGPT Gemini] Prompt found, attempting auto-submit...");
+      console.log("[GFormToGPT Gemini] Prompt found, attempting auto-submit...");
       const checkInterval = setInterval(() => {
         // Gemini uses a contenteditable div
         const editor = document.querySelector('.ql-editor[contenteditable="true"]') || 
@@ -37,7 +37,7 @@
           
           setTimeout(() => {
             if (sendBtn && !sendBtn.disabled) {
-                console.log("🖱️ [GFormToGPT Gemini] Clicking send button...");
+                console.log("[GFormToGPT Gemini] Clicking send button...");
                 highlightElement(sendBtn, "#4caf50");
                 sendBtn.click();
             }

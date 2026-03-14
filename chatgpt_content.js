@@ -4,7 +4,7 @@
 (function () {
   "use strict";
 
-  console.log("🚀 [GFormToGPT ChatGPT] Script loaded");
+  console.log("[GFormToGPT ChatGPT] Script loaded");
 
   // Only activate if we are in a session initiated by the extension
   const isGFormSession =
@@ -12,11 +12,11 @@
     document.referrer.includes("docs.google.com/forms");
 
   if (!isGFormSession) {
-    console.log("⏭️ [GFormToGPT ChatGPT] Not a GForm session, skipping...");
+    console.log("[GFormToGPT ChatGPT] Not a GForm session, skipping...");
     return;
   }
 
-  console.log("✅ [GFormToGPT ChatGPT] GForm session detected. Monitoring for JSON...");
+  console.log("[GFormToGPT ChatGPT] GForm session detected. Monitoring for JSON...");
 
   // ── Highlight helper ──
   function highlightElement(el, color = "#3d5a80") {
@@ -61,7 +61,7 @@
     const prompt = urlParams.get('prompt');
     
     if (prompt) {
-      console.log("📝 [GFormToGPT ChatGPT] Prompt found in URL, attempting auto-submit...");
+      console.log("[GFormToGPT ChatGPT] Prompt found in URL, attempting auto-submit...");
       showToast("Auto-submitting prompt...");
       
       const checkInterval = setInterval(() => {
@@ -77,11 +77,11 @@
 
         if (textarea && (valLen > 10 || textLen > 10)) { 
             clearInterval(checkInterval);
-            console.log("🚀 [GFormToGPT ChatGPT] Textarea filled. Triggering click...");
+            console.log("[GFormToGPT ChatGPT] Textarea filled. Triggering click...");
             highlightElement(textarea);
             
             if (sendBtn) {
-                console.log("🖱️ [GFormToGPT ChatGPT] Clicking send button in 1s...");
+                console.log("[GFormToGPT ChatGPT] Clicking send button in 1s...");
                 highlightElement(sendBtn, "#4caf50");
                 
                 setTimeout(() => {
@@ -95,7 +95,7 @@
         } else if (textarea) {
             // Force injection if ChatGPT didn't auto-fill from URL
             if (textarea.value === "" && prompt) {
-                console.log("⌨️ [GFormToGPT ChatGPT] Manual injection needed...");
+                console.log("[GFormToGPT ChatGPT] Manual injection needed...");
                 textarea.value = prompt;
                 textarea.dispatchEvent(new Event('input', { bubbles: true }));
             }
@@ -120,7 +120,7 @@
           const parsed = JSON.parse(cleanedText);
           
           if (cleanedText !== lastProcessedJson) {
-            console.log("💎 [GFormToGPT ChatGPT] Valid JSON detected!", parsed);
+            console.log("[GFormToGPT ChatGPT] Valid JSON detected!", parsed);
             lastProcessedJson = cleanedText;
             highlightElement(block, "#4caf50");
             showToast("JSON Detected! Returning to Form...", "success");
@@ -131,7 +131,7 @@
               rawJson: cleanedText
             }, (response) => {
               if (response && response.success) {
-                console.log("📤 [GFormToGPT ChatGPT] JSON sent back. Process complete.");
+                console.log("[GFormToGPT ChatGPT] JSON sent back. Process complete.");
               }
             });
           }
@@ -152,7 +152,7 @@
       childList: true,
       subtree: true
     });
-    console.log("👀 [GFormToGPT ChatGPT] Observer started");
+    console.log("[GFormToGPT ChatGPT] Observer started");
     autoSubmitPrompt();
   };
 

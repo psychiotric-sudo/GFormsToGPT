@@ -1,0 +1,356 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Welcome to GForm to GPT</title>
+    <!-- Localized scripts for CSP compliance -->
+    <script src="typed.js"></script>
+    <script src="welcome.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
+
+      :root {
+        --primary: #3d5a80;
+        --secondary: #98c1d9;
+        --accent: #ee6c4d;
+        --white: rgba(255, 255, 255, 0.9);
+        --glass-bg: rgba(255, 255, 255, 0.07);
+        --glass-border: rgba(255, 255, 255, 0.12);
+        --glow: rgba(152, 193, 217, 0.25);
+      }
+
+      * { box-sizing: border-box; }
+
+      body, html {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        font-family: "Outfit", sans-serif;
+        color: #ffffff;
+        background: #020617;
+        overflow-x: hidden;
+      }
+
+      .bg-fixed {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        background-image: linear-gradient(180deg, rgba(2, 6, 23, 0.5) 0%, rgba(2, 6, 23, 0.9) 100%), url('bg.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+      }
+
+      /* Depth Orbs */
+      .glow-orb {
+        position: fixed;
+        width: 500px;
+        height: 500px;
+        border-radius: 50%;
+        background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+        z-index: 2;
+        filter: blur(80px);
+        pointer-events: none;
+      }
+      .orb-1 { top: -150px; right: -150px; animation: float 25s infinite alternate; }
+      .orb-2 { bottom: -150px; left: -150px; animation: float 30s infinite alternate-reverse; }
+
+      @keyframes float {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(80px, 80px) scale(1.1); }
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        background: rgba(2, 6, 23, 0.4);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        padding: 20px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        border-bottom: 1px solid var(--glass-border);
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 28px;
+        color: #fff;
+        text-shadow: 0 0 30px rgba(255,255,255,0.15);
+      }
+
+      .content-wrapper {
+        position: relative;
+        z-index: 10;
+      }
+
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 0 20px;
+      }
+
+      .hero h1 {
+        font-size: clamp(55px, 12vw, 100px);
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -5px;
+        color: #fff;
+        line-height: 0.9;
+      }
+
+      .hero-typed {
+        font-size: clamp(22px, 5vw, 36px);
+        margin-top: 35px;
+        font-weight: 300;
+        color: var(--secondary);
+        min-height: 1.5em;
+        max-width: 900px;
+        letter-spacing: -0.5px;
+      }
+
+      .main-container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 40px 20px 150px;
+      }
+
+      .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(50px);
+        -webkit-backdrop-filter: blur(50px);
+        border: 1px solid var(--glass-border);
+        border-radius: 50px;
+        padding: 100px 80px;
+        margin-bottom: 120px;
+        box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+      }
+
+      .section-tag {
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 8px;
+        display: block;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .section-title {
+        font-size: clamp(40px, 7vw, 60px);
+        text-align: center;
+        margin-bottom: 100px;
+        font-weight: 700;
+        letter-spacing: -3px;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 50px;
+      }
+
+      .feature-item {
+        background: rgba(255, 255, 255, 0.02);
+        padding: 60px;
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+      }
+
+      .feature-item:hover {
+        transform: translateY(-25px) scale(1.04);
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+      }
+
+      .feature-icon {
+        color: var(--secondary);
+        margin-bottom: 40px;
+        background: rgba(255,255,255,0.04);
+        width: 90px;
+        height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 28px;
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+      }
+
+      .feature-item h3 { font-size: 28px; margin: 0 0 25px; font-weight: 600; color: #fff; letter-spacing: -0.5px; }
+      .feature-item p { font-size: 18px; opacity: 0.65; margin: 0; line-height: 1.9; }
+
+      .legal-formatted {
+        font-size: 16px;
+        opacity: 0.9;
+        line-height: 1.8;
+        text-align: justify;
+        color: #e2e8f0;
+      }
+      .legal-formatted h3 { color: #fff; margin-top: 60px; font-size: 28px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px; }
+      .legal-formatted h4 { color: var(--secondary); margin-top: 40px; font-size: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+      .legal-formatted p { margin-bottom: 25px; }
+      .legal-formatted strong { color: var(--accent); }
+
+      footer {
+        text-align: center;
+        padding: 120px 40px;
+        color: rgba(255,255,255,0.25);
+        font-size: 17px;
+        border-top: 1px solid rgba(255,255,255,0.03);
+      }
+
+      footer a { color: var(--secondary); text-decoration: none; font-weight: 600; opacity: 0.8; transition: all 0.3s; }
+      footer a:hover { color: var(--accent); opacity: 1; }
+
+      .reveal { opacity: 0; transform: translateY(60px); transition: all 1.8s cubic-bezier(0.16, 1, 0.3, 1); }
+      .reveal.active { opacity: 1; transform: translateY(0); }
+      
+      .scroll-down {
+        position: absolute;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        animation: bounce 2.5s infinite;
+        opacity: 0.3;
+        cursor: pointer;
+      }
+
+      @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateX(-50%) translateY(0);} 40% {transform: translateX(-50%) translateY(-20px);} 60% {transform: translateX(-50%) translateY(-10px);} }
+    </style>
+  </head>
+  <body>
+    <div class="bg-fixed"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <nav>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+        <span>GForm to GPT</span>
+      </div>
+      <div style="font-size: 16px; font-weight: 500; color: rgba(255,255,255,0.3);">Final Build v3.5.3</div>
+    </nav>
+
+    <div class="content-wrapper">
+      <header class="hero">
+        <h1 id="hero-title"></h1>
+        <div class="hero-typed"><span id="typed"></span></div>
+        <div class="scroll-down" onclick="document.querySelector('.main-container').scrollIntoView({behavior:'smooth'})">
+          <svg viewBox="0 0 24 24" width="60" height="60" stroke="#fff" stroke-width="0.5" fill="none"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"></path></svg>
+        </div>
+      </header>
+
+      <main class="main-container">
+        <section class="glass-card reveal">
+          <span class="section-tag">ecosystem</span>
+          <h2 class="section-title"><span id="feat-title"></span></h2>
+          <div class="features-grid">
+            <div class="feature-item">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+              <h3>Deep DOM Intelligence</h3>
+              <p>Our neural engine parses complex form structures, multi-page layouts, and nested grids that other extensions miss. It intelligently maps relationships between labels and inputs for high-precision accuracy across various form variations.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg></div>
+              <h3>Tri-Neural AI Support</h3>
+              <p>Toggle between GPT-4o, Claude 3.5 Sonnet, and Gemini 1.5 Pro dynamically to find the perfect context for your data. Each model offers unique reasoning capabilities tailored to different types of questionnaire content.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+              <h3>Privacy Guard 2.0</h3>
+              <p>Military-grade PII filtering ensures names, emails, and sensitive identifiers are scrubbed before reaching AI servers. Our proprietary keyword-matching engine is designed to prioritize your anonymity during every transaction.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <h3>Human-Mimetic Typing</h3>
+              <p>Simulate realistic keystroke intervals, focus events, and deliberate pauses to bypass advanced bot detection systems seamlessly. This feature makes your automated inputs indistinguishable from manual data entry.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+              <h3>Neural Prompt Tuning</h3>
+              <p>Every scan generates a high-entropy, context-optimized prompt designed specifically for the target AI model's logic. Our prompt engineering minimizes hallucinations and maximizes the relevance of every generated answer.</p>
+            </div>
+            <div class="feature-item">
+              <div class="feature-icon"><svg viewBox="0 0 24 24" width="40" height="40" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div>
+              <h3>Edge Security</h3>
+              <p>All form configurations, custom instructions, and temporary data are stored in encrypted browser-local storage. We operate under a zero-cloud policy, meaning your data never leaves your device except to your chosen AI.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="legal" class="glass-card reveal">
+          <span class="section-tag">Compliance & Governance</span>
+          <h2 class="section-title">Legal Framework</h2>
+          
+          <div class="legal-formatted">
+            <h3>TERMS AND CONDITIONS</h3>
+            
+            <h4>ACCEPTANCE AND CONTINUED USE</h4>
+            <p><strong>BY INSTALLING ACCESSING OR USING THE GFORM TO GPT BROWSER EXTENSION</strong> YOU ARE VOLUNTARILY AND KNOWINGLY ENTERING INTO A LEGALLY BINDING AGREEMENT THAT GOVERNS EVERY ASPECT OF YOUR INTERACTION WITH THE SOFTWARE AND ITS RELATED FEATURES AND SERVICES AND YOU ACKNOWLEDGE THAT THIS AGREEMENT APPLIES REGARDLESS OF HOW OFTEN YOU USE THE EXTENSION OR FOR WHAT PURPOSE YOU INITIALLY INSTALLED IT.</p>
+            <p>THIS AGREEMENT IS INTENTIONALLY COMPREHENSIVE AND IS WRITTEN TO COVER A WIDE RANGE OF FORESEEABLE AND UNFORESEEABLE SCENARIOS AND BY CONTINUING TO USE THE EXTENSION YOU CONFIRM THAT YOU ACCEPT ALL TERMS IN FULL EVEN IF YOU DO NOT READ THEM IN DETAIL OR SKIP CERTAIN SECTIONS. <strong>IF YOU DO NOT AGREE WITH ANY PORTION OF THIS AGREEMENT YOUR ONLY OPTION IS TO DISCONTINUE USE AND REMOVE THE EXTENSION FROM YOUR BROWSER IMMEDIATELY.</strong></p>
+
+            <h4>USE OF THE SOFTWARE</h4>
+            <p>GFORM TO GPT IS PROVIDED SOLELY AS A CONVENIENCE TOOL DESIGNED TO ASSIST USERS WITH INTERACTING WITH GOOGLE FORMS CONTENT AND IS NOT INTENDED TO REPLACE HUMAN JUDGMENT VERIFICATION OR INDEPENDENT REVIEW. THE SOFTWARE IS LICENSED NOT SOLD AND ALL RIGHTS NOT EXPRESSLY GRANTED TO YOU REMAIN WITH THE DEVELOPERS.</p>
+            <p>YOU AGREE THAT YOU WILL NOT ATTEMPT TO MODIFY COPY REDISTRIBUTE SELL SUBLICENSE OR OTHERWISE EXPLOIT ANY PART OF THE EXTENSION OR ITS UNDERLYING LOGIC AND YOU UNDERSTAND THAT ANY SUCH ACTION MAY RESULT IN TERMINATION OF YOUR ACCESS WITHOUT NOTICE AND POSSIBLE LEGAL CONSEQUENCES. THE DEVELOPERS MAKE NO GUARANTEE THAT THE EXTENSION WILL FUNCTION WITHOUT INTERRUPTION ERRORS OR INACCURACIES AND RESERVE THE RIGHT TO CHANGE OR DISCONTINUE FEATURES AT ANY TIME.</p>
+
+            <h4>DISCLAIMERS AND LIABILITY</h4>
+            <p>YOU EXPRESSLY UNDERSTAND AND AGREE THAT YOUR USE OF THE EXTENSION IS AT YOUR OWN RISK AND THAT ALL OUTPUT GENERATED THROUGH AI MODELS MAY BE INACCURATE INCOMPLETE OR MISLEADING DEPENDING ON CONTEXT INPUT AND LIMITATIONS OF THE UNDERLYING TECHNOLOGY.</p>
+            <p>THE DEVELOPERS DISCLAIM ALL WARRANTIES AND SHALL NOT BE HELD LIABLE FOR ANY DIRECT OR INDIRECT DAMAGES INCLUDING BUT NOT LIMITED TO ACADEMIC PENALTIES DATA LOSS REPUTATIONAL DAMAGE OR MISUSE OF GENERATED CONTENT. YOU AGREE THAT YOU ARE SOLELY RESPONSIBLE FOR ENSURING THAT YOUR USE OF THE EXTENSION COMPLIES WITH ALL APPLICABLE LAWS RULES AND INSTITUTIONAL POLICIES AND THAT ANY CONSEQUENCES ARISING FROM MISUSE ARE YOUR RESPONSIBILITY ALONE.</p>
+
+            <h3>PRIVACY POLICY</h3>
+
+            <h4>GENERAL APPROACH TO PRIVACY</h4>
+            <p>THIS PRIVACY POLICY IS INTENDED TO DESCRIBE IN EXTENSIVE DETAIL HOW INFORMATION FLOWS THROUGH THE GFORM TO GPT EXTENSION WHILE ALSO EMPHASIZING THAT THE DESIGN PHILOSOPHY OF THE SOFTWARE IS BUILT AROUND LIMITING DATA COLLECTION AS MUCH AS POSSIBLE AND KEEPING CONTROL IN THE HANDS OF THE USER.</p>
+            <p>THE EXTENSION DOES NOT REQUIRE ACCOUNT CREATION DOES NOT REQUEST PERSONAL DETAILS AND DOES NOT ATTEMPT TO BUILD USER PROFILES AND MOST FUNCTIONALITY OCCURS LOCALLY WITHIN YOUR OWN BROWSER ENVIRONMENT WITHOUT PERSISTENT STORAGE OR BACKGROUND TRACKING.</p>
+
+            <h4>HOW WE COLLECT DATA</h4>
+            <p>IN THE COURSE OF NORMAL OPERATION THE EXTENSION MAY INTERACT WITH CERTAIN TECHNICAL SIGNALS THAT ARE NECESSARY TO ENSURE THAT FEATURES FUNCTION AS EXPECTED AND THAT PERFORMANCE CAN BE MAINTAINED OVER TIME AND THIS PROCESS IS INTENTIONALLY DESIGNED TO BE INDIRECT NON INTRUSIVE AND LIMITED IN SCOPE.</p>
+            <p>ANY DATA THAT IS COLLECTED IS GENERATED AS A BYPRODUCT OF USING THE EXTENSION RATHER THAN THROUGH ACTIVE PROMPTS FOR PERSONAL INFORMATION AND MAY INCLUDE GENERAL EVENTS SUCH AS INSTALLATION OCCURRENCES FEATURE ACTIVATION COUNTS ERROR CONDITIONS OR OTHER BROAD TECHNICAL INDICATORS THAT HELP IDENTIFY WHETHER THE SOFTWARE IS FUNCTIONING CORRECTLY.</p>
+            <p>THIS INFORMATION IS ASSOCIATED WITH A RANDOMLY GENERATED ANONYMOUS IDENTIFIER AND IS NOT TIED TO YOUR NAME IDENTITY LOCATION OR BROWSING HISTORY AND IS NOT USED TO TRACK YOU ACROSS WEBSITES OR SESSIONS.</p>
+
+            <h4>HOW WE PROCESS DATA</h4>
+            <p>DATA THAT FLOWS THROUGH THE EXTENSION IS PROCESSED IN A WAY THAT PRIORITIZES LOCAL EXECUTION AND USER INITIATED ACTIONS AND FORM CONTENT THAT YOU VIEW IS SCANNED TEMPORARILY IN MEMORY ONLY WHEN REQUIRED FOR FUNCTIONAL PURPOSES.</p>
+            <p>WHEN YOU CHOOSE TO SEND CONTENT TO AN AI PROVIDER THIS ACTION OCCURS ONLY AFTER YOU INITIATE IT AND THE DATA IS TRANSMITTED DIRECTLY TO THE SELECTED THIRD PARTY SERVICE WITHOUT BEING STORED OR REVIEWED BY THE DEVELOPERS.</p>
+            <p>THE PROCESSING PIPELINE IS DESIGNED TO BE TRANSIENT MEANING THAT INFORMATION PASSES THROUGH THE SYSTEM ONLY FOR THE DURATION NECESSARY TO COMPLETE THE REQUEST AND IS NOT RETAINED FOR FUTURE USE OR ANALYSIS BY THE EXTENSION ITSELF.</p>
+
+            <h4>WHAT DATA WE DO NOT COLLECT</h4>
+            <p>THE EXTENSION DOES NOT COLLECT PERSONALLY IDENTIFIABLE INFORMATION SUCH AS NAMES EMAIL ADDRESSES PHONE NUMBERS PHYSICAL ADDRESSES PAYMENT DETAILS OR GOVERNMENT IDENTIFIERS AND DOES NOT MONITOR GENERAL WEB BROWSING ACTIVITY OUTSIDE OF THE IMMEDIATE CONTEXT OF A GOOGLE FORM THAT YOU ARE ACTIVELY VIEWING.</p>
+            <p>THERE IS NO BACKGROUND RECORDING KEYSTROKE LOGGING SCREEN CAPTURE OR BEHAVIORAL PROFILING AND NO DATA IS SOLD SHARED OR USED FOR ADVERTISING PURPOSES.</p>
+
+            <h4>DATA STORAGE AND RETENTION</h4>
+            <p>ALL USER PREFERENCES SETTINGS AND CUSTOM INSTRUCTIONS ARE STORED LOCALLY USING BROWSER PROVIDED STORAGE AND REMAIN ON YOUR DEVICE AT ALL TIMES. THIS DATA IS AUTOMATICALLY REMOVED WHEN YOU UNINSTALL THE EXTENSION AND IS NOT BACKED UP TO DEVELOPER CONTROLLED SERVERS.</p>
+            <p>IF YOU ENABLE BROWSER SYNC FEATURES ANY DATA STORED MAY BE COPIED BY YOUR BROWSER PROVIDER UNDER THEIR OWN TERMS WHICH ARE OUTSIDE THE CONTROL OF THE DEVELOPERS.</p>
+
+            <h4>SECURITY AND RISK ACKNOWLEDGMENT</h4>
+            <p>REASONABLE MEASURES ARE TAKEN TO PROTECT DATA TRANSMISSION INCLUDING THE USE OF ENCRYPTED CONNECTIONS WHERE APPLICABLE BUT YOU ACKNOWLEDGE THAT NO SYSTEM IS COMPLETELY SECURE AND THAT ALL USE OF SOFTWARE INVOLVES SOME DEGREE OF RISK.</p>
+            <p>BY USING THE EXTENSION YOU ACCEPT THESE RISKS AND AGREE THAT THE DEVELOPERS SHALL NOT BE HELD LIABLE FOR EVENTS OUTSIDE THEIR REASONABLE CONTROL INCLUDING THIRD PARTY SERVICE FAILURES OR UNAUTHORIZED ACCESS.</p>
+
+            <h4>CHANGES TO THIS POLICY</h4>
+            <p>THIS PRIVACY POLICY MAY BE UPDATED FROM TIME TO TIME TO REFLECT CHANGES IN FUNCTIONALITY LEGAL REQUIREMENTS OR OPERATIONAL PRACTICES AND ANY SUCH CHANGES TAKE EFFECT UPON PUBLICATION. CONTINUED USE OF THE EXTENSION AFTER UPDATES CONSTITUTES ACCEPTANCE OF THE REVISED POLICY AND IF YOU DO NOT AGREE WITH ANY PART YOUR ONLY REMEDY IS TO DISCONTINUE USE AND REMOVE THE EXTENSION.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p>Engineered by <a href="https://t.me/chqrlzz" target="_blank">@chqrlzz</a> | GForm to GPT &copy; 2026</p>
+        <p style="margin-top: 15px; font-size: 14px; opacity: 0.4;">Advanced Neural Automation Interface</p>
+      </footer>
+    </div>
+  </body>
+</html>

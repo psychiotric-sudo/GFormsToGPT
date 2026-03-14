@@ -12,17 +12,17 @@ const tabMap = new Map();
 
 // ── Update Checker ──
 async function checkForUpdates() {
-  console.log("🔄 [GFormToGPT] Checking for updates...");
+  console.log("[GFormToGPT] Checking for updates...");
   try {
     const response = await fetch(`${GITHUB_MANIFEST_URL}?t=${Date.now()}`); // Bypass cache
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const remoteManifest = await response.json();
     const remoteVersion = remoteManifest.version;
 
-    console.log(`📡 [GFormToGPT] Local: ${VERSION}, Remote: ${remoteVersion}`);
+    console.log(`[GFormToGPT] Local: ${VERSION}, Remote: ${remoteVersion}`);
 
     if (remoteVersion !== VERSION) {
-      console.log(`🆕 [GFormToGPT] Update available: ${remoteVersion}`);
+      console.log(`[GFormToGPT] Update available: ${remoteVersion}`);
       chrome.storage.local.set({ updateAvailable: remoteVersion });
 
       chrome.notifications.create({
@@ -48,7 +48,7 @@ async function checkForUpdates() {
       return { updateAvailable: false, version: remoteVersion };
     }
   } catch (error) {
-    console.error("❌ [GFormToGPT] Update check failed:", error);
+    console.error("[GFormToGPT] Update check failed:", error);
     return { error: true, message: error.message };
   }
 }
@@ -103,22 +103,22 @@ async function sendToDiscord(eventType, userId, payload = {}) {
 
     switch (eventType) {
       case "INSTALL":
-        title = "🚀 NEW INSTALL";
+        title = "NEW INSTALL";
         description = `**User:** ${userId}\n**Version:** ${VERSION}\n**Date:** ${date}`;
         color = 0x00ff00;
         break;
       case "FORM_FILLED":
-        title = "✅ FORM FILLED";
+        title = "FORM FILLED";
         description = `**User:** ${userId}\n**Version:** ${VERSION}\n**Total Forms:** ${payload.formCount}\n**Questions Filled:** ${payload.filledCount}\n**Time Saved:** ${payload.secondsSaved}s\n**Date:** ${date}`;
         color = 0x0099ff;
         break;
       case "ERROR_LOG":
-        title = "❌ ERROR REPORT";
+        title = "ERROR REPORT";
         description = `**User:** ${userId}\n**Type:** ${payload.errorType}\n**Message:** ${payload.message}\n**Date:** ${date}`;
         color = 0xff0000;
         break;
       case "STATS":
-        title = "📊 SCAN STATS";
+        title = "SCAN STATS";
         description = `**User:** ${userId}\n**AI Used:** ${payload.aiType || "Unknown"}\n**Questions Scanned:** ${payload.scannedCount}\n**Types:** ${payload.types}\n**Date:** ${date}`;
         color = 0xffff00;
         break;
@@ -136,7 +136,7 @@ async function sendToDiscord(eventType, userId, payload = {}) {
   }
 }
 
-// ── Handle extension installation ──
+// Handle extension installation
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === "install") {
     const userId = generateUserId();
@@ -148,6 +148,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     });
     await sendToDiscord("INSTALL", userId);
     checkForUpdates();
+
+    // Open welcome page
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("welcome.html")
+    });
   }
 });
 
@@ -175,7 +180,7 @@ chrome.action.onClicked.addListener((tab) => {
   chrome.windows.create({
     url: chrome.runtime.getURL("popup.html"),
     type: "popup",
-    width: 420,
+    width: 480,
     height: 600,
   });
 });
@@ -242,6 +247,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   } else if (request.action === "manualUpdateCheck") {
     checkForUpdates().then((res) => sendResponse(res));
+    return true;
+  } else if (request.action === "openPopup") {
+    const url = chrome.runtime.getURL(`popup.html?tab=${request.tab || "clear"}`);
+    chrome.tabs.create({ url });
+    sendResponse({ success: true });
     return true;
   }
 });
