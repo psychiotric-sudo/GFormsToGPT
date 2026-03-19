@@ -1,45 +1,104 @@
-// Popup script for ChatGPT data clearing UI and tab management
+// Popup script for GFormToGPT v3.8.0
 
 // ── Tab switching functionality ──
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     const tabName = btn.getAttribute("data-tab");
+    document.querySelectorAll(".tab-content").forEach((tab) => tab.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach((button) => button.classList.remove("active"));
 
-    // Remove active class from all tabs and buttons
-    document.querySelectorAll(".tab-content").forEach((tab) => {
-      tab.classList.remove("active");
-    });
-    document.querySelectorAll(".tab-btn").forEach((button) => {
-      button.classList.remove("active");
-    });
-
-    // Add active class to clicked tab and button
     const targetTab = document.getElementById(tabName);
     if (targetTab) {
       targetTab.classList.add("active");
       btn.classList.add("active");
+      if (tabName === "history") loadHistory();
     }
   });
 });
 
+// ── History Logic ──
+const historyList = document.getElementById("historyList");
+
+async function loadHistory() {
+  const data = await chrome.storage.local.get(["history"]);
+  const history = data.history || [];
+  
+  if (history.length === 0) {
+    historyList.innerHTML = '<div class="empty-history">No forms scanned yet.</div>';
+    return;
+  }
+
+  historyList.innerHTML = history.map(item => `
+    <div class="history-item" data-id="${item.id}">
+      <div class="history-header">
+        <div>
+          <h4>${item.formTitle}</h4>
+          <span>${new Date(item.timestamp).toLocaleString()}</span>
+        </div>
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </div>
+      <div class="history-content">
+        ${item.questions.map((q, idx) => `
+          <div class="history-q-row">
+            <div class="history-q">[Q${idx + 1}] ${q.q}</div>
+            <div class="history-a">${q.a}</div>
+          </div>
+        `).join('')}
+        <div class="export-btn-container">
+          <button class="btn btn-outline export-btn" style="width:100%; font-size:11px; padding:6px;">
+            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export to Text
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Add accordion behavior
+  document.querySelectorAll(".history-header").forEach(header => {
+    header.addEventListener("click", () => {
+      header.parentElement.classList.toggle("open");
+    });
+  });
+
+  // Add export behavior
+  document.querySelectorAll(".export-btn").forEach((btn, idx) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      exportEntry(history[idx]);
+    });
+  });
+}
+
+function exportEntry(entry) {
+  let text = `FORM: ${entry.formTitle}\nDATE: ${new Date(entry.timestamp).toLocaleString()}\n\n`;
+  entry.questions.forEach((q, idx) => {
+    text += `[Q${idx + 1}] ${q.q}\n${q.a}\n\n`;
+  });
+
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${entry.formTitle.replace(/[^a-z0-9]/gi, '_')}_history.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── Settings Logic ──
 const customPromptInput = document.getElementById("customPrompt");
-const ignoredKeywordsInput = document.getElementById("ignoredKeywords");
 const humanTypingInput = document.getElementById("humanTyping");
 const verboseLoggingInput = document.getElementById("verboseLogging");
 const saveSettingsBtn = document.getElementById("saveSettings");
 const settingsStatus = document.getElementById("settingsStatus");
-const updateNotice = document.getElementById("updateNotice");
-const newVersionSpan = document.getElementById("newVersion");
 const checkUpdateBtn = document.getElementById("checkUpdateBtn");
-const updateNowBtn = document.getElementById("updateNowBtn");
-const viewFullLegalBtn = document.getElementById("viewFullLegalBtn");
 const updateStatus = document.getElementById("updateStatus");
 
-// Ensure "Clear" tab is active on load or handle tab param
 document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
-  const targetTabId = params.get("tab") || "clear";
+  const targetTabId = params.get("tab") || "history";
 
   document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -50,171 +109,74 @@ document.addEventListener("DOMContentLoaded", () => {
   if (targetTab && targetBtn) {
     targetTab.classList.add("active");
     targetBtn.classList.add("active");
-  } else {
-    // Default to clear
-    const clearTab = document.getElementById("clear");
-    const clearBtnTab = document.querySelector('[data-tab="clear"]');
-    if (clearTab) clearTab.classList.add("active");
-    if (clearBtnTab) clearBtnTab.classList.add("active");
+    if (targetTabId === "history") loadHistory();
   }
-  
-  // Set dynamic version display
-  const versionDisplay = document.getElementById('currentVersionDisplay');
-  if (versionDisplay) versionDisplay.textContent = chrome.runtime.getManifest().version;
 });
 
 // Load settings
-chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping", "verboseLogging", "updateAvailable"], (data) => {
+chrome.storage.local.get(["customPrompt", "humanTyping", "verboseLogging"], (data) => {
   if (data.customPrompt && customPromptInput) customPromptInput.value = data.customPrompt;
-  if (data.ignoredKeywords && ignoredKeywordsInput) ignoredKeywordsInput.value = data.ignoredKeywords;
   if (data.humanTyping !== undefined && humanTypingInput) humanTypingInput.checked = data.humanTyping;
   if (data.verboseLogging !== undefined && verboseLoggingInput) verboseLoggingInput.checked = data.verboseLogging;
-  
-  if (data.updateAvailable && newVersionSpan && updateNotice) {
-    newVersionSpan.textContent = data.updateAvailable;
-    updateNotice.style.display = "block";
-  }
 });
-
-// Manual Update Check
-if (checkUpdateBtn) {
-  checkUpdateBtn.addEventListener("click", () => {
-    checkUpdateBtn.disabled = true;
-    checkUpdateBtn.textContent = "Checking...";
-    if (updateStatus) {
-      updateStatus.className = "status loading";
-      updateStatus.textContent = "Fetching latest version...";
-      updateStatus.style.display = "block";
-    }
-
-    chrome.runtime.sendMessage({ action: "manualUpdateCheck" }, (response) => {
-      checkUpdateBtn.disabled = false;
-      checkUpdateBtn.textContent = "Check for Updates";
-      
-      if (response && response.updateAvailable) {
-        if (updateStatus) {
-          updateStatus.className = "status success";
-          updateStatus.textContent = `✓ New version ${response.version} found!`;
-        }
-        if (newVersionSpan) newVersionSpan.textContent = response.version;
-        if (updateNotice) updateNotice.style.display = "block";
-      } else if (response && response.error) {
-        if (updateStatus) {
-          updateStatus.className = "status error";
-          updateStatus.textContent = "✗ Error checking for updates.";
-        }
-      } else {
-        if (updateStatus) {
-          updateStatus.className = "status success";
-          updateStatus.textContent = "✓ You are on the latest version.";
-        }
-        if (updateNotice) updateNotice.style.display = "none";
-      }
-      
-      if (updateStatus) {
-        setTimeout(() => { updateStatus.style.display = "none"; }, 3000);
-      }
-    });
-  });
-}
 
 // Save settings
 if (saveSettingsBtn) {
   saveSettingsBtn.addEventListener("click", () => {
-    const customPrompt = customPromptInput ? customPromptInput.value.trim() : "";
-    const ignoredKeywords = ignoredKeywordsInput ? ignoredKeywordsInput.value.trim() : "";
-    const humanTyping = humanTypingInput ? humanTypingInput.checked : false;
-    const verboseLogging = verboseLoggingInput ? verboseLoggingInput.checked : false;
-
-    chrome.storage.local.set(
-      {
-        customPrompt,
-        ignoredKeywords,
-        humanTyping,
-        verboseLogging,
-      },
-      () => {
-        if (settingsStatus) {
-          settingsStatus.className = "status success";
-          settingsStatus.textContent = "✓ Settings saved!";
-          settingsStatus.style.display = "block";
-          setTimeout(() => {
-            settingsStatus.style.display = "none";
-          }, 2000);
-        }
-      },
-    );
-  });
-}
-
-// ── Clear data button functionality ──
-const clearBtn = document.getElementById("clearBtn");
-if (clearBtn) {
-  clearBtn.addEventListener("click", async () => {
-    const statusDiv = document.getElementById("status");
-
-    clearBtn.disabled = true;
-    const oldText = clearBtn.textContent;
-    clearBtn.textContent = "Clearing...";
-    
-    if (statusDiv) {
-      statusDiv.className = "status loading";
-      statusDiv.textContent = "Processing...";
-      statusDiv.style.display = "block";
-    }
-
-    chrome.runtime.sendMessage({ action: "clearChatGPTData" }, (response) => {
-      clearBtn.disabled = false;
-      clearBtn.textContent = oldText;
-
-      if (statusDiv) {
-        if (response && response.success) {
-          statusDiv.className = "status success";
-          statusDiv.textContent = "✓ " + response.message;
-        } else {
-          statusDiv.className = "status error";
-          statusDiv.textContent = "✗ " + (response?.message || "Failed to clear data");
-        }
-      }
+    chrome.storage.local.set({
+      customPrompt: customPromptInput.value.trim(),
+      humanTyping: humanTypingInput.checked,
+      verboseLogging: verboseLoggingInput.checked,
+    }, () => {
+      settingsStatus.className = "status success";
+      settingsStatus.textContent = "✓ Settings saved!";
+      settingsStatus.style.display = "block";
+      setTimeout(() => settingsStatus.style.display = "none", 2000);
     });
   });
 }
 
-// Update Now Button
-if (updateNowBtn) {
-  updateNowBtn.addEventListener("click", () => {
-    const url = "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/refs/heads/main/UPDATE.bat";
-    window.open(url, "_blank");
+// Update Check
+if (checkUpdateBtn) {
+  checkUpdateBtn.addEventListener("click", () => {
+    checkUpdateBtn.disabled = true;
+    updateStatus.className = "status loading";
+    updateStatus.textContent = "Checking...";
+    updateStatus.style.display = "block";
+
+    chrome.runtime.sendMessage({ action: "manualUpdateCheck" }, (response) => {
+      checkUpdateBtn.disabled = false;
+      if (response && response.updateAvailable) {
+        updateStatus.className = "status success";
+        updateStatus.textContent = `✓ New version ${response.version} found!`;
+      } else {
+        updateStatus.className = "status success";
+        updateStatus.textContent = "✓ You are on the latest version.";
+      }
+      setTimeout(() => updateStatus.style.display = "none", 3000);
+    });
   });
 }
 
-// View Full Legal Button
-if (viewFullLegalBtn) {
-  viewFullLegalBtn.addEventListener("click", () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html#legal") });
+// Clear Data
+const clearBtn = document.getElementById("clearBtn");
+if (clearBtn) {
+  clearBtn.addEventListener("click", () => {
+    const statusDiv = document.getElementById("status");
+    clearBtn.disabled = true;
+    statusDiv.className = "status loading";
+    statusDiv.textContent = "Clearing...";
+    statusDiv.style.display = "block";
+
+    chrome.runtime.sendMessage({ action: "clearChatGPTData" }, (response) => {
+      clearBtn.disabled = false;
+      statusDiv.className = response.success ? "status success" : "status error";
+      statusDiv.textContent = response.message;
+    });
   });
 }
 
-// ── Developer Modal Logic ──
-const developerModal = document.getElementById("developerModal");
-const openDevModalBtn = document.getElementById("openDevModalBtn");
-const closeDevModal = document.getElementById("closeDevModal");
-
-if (openDevModalBtn && developerModal) {
-  openDevModalBtn.addEventListener("click", () => {
-    developerModal.style.display = "block";
-  });
-}
-
-if (closeDevModal && developerModal) {
-  closeDevModal.addEventListener("click", () => {
-    developerModal.style.display = "none";
-  });
-}
-
-// Close modal when clicking outside
-window.addEventListener("click", (event) => {
-  if (event.target === developerModal) {
-    developerModal.style.display = "none";
-  }
+// Legal Link
+document.getElementById("viewFullLegalBtn").addEventListener("click", () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html#legal") });
 });

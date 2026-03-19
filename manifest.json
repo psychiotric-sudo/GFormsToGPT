@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GForm to GPT",
-  "version": "3.6.1",
+  "version": "3.8.2",
   "description": "Scan Google Forms, filter personal questions, and auto-fill with ChatGPT responses",
   "author": "@chqrlzz",
   "web_accessible_resources": [
@@ -24,7 +24,7 @@
     "https://chatgpt.com/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*",
-    "https://discord.com/*"
+    "https://*.workers.dev/*"
   ],
   "content_scripts": [
     {
@@ -62,5 +62,13 @@
   },
   "icons": {
     "128": "icons/icon.png"
+  },
+  "commands": {
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+M"
+      },
+      "description": "Toggle the GFormToGPT floating panel"
+    }
   }
 }

@@ -26,30 +26,35 @@
         // Target the specific button provided by the user
         const sendBtn = document.querySelector('button[aria-label="Send message"]') || 
                         document.querySelector('button._claude_x02hl_108') ||
-                        document.querySelector('button:has(svg path[d*="M208.49"])');
+                        document.querySelector('button:has(svg path[d*="M208.49"])') ||
+                        document.querySelector('button[type="button"] svg path[d*="M208.49"]')?.closest('button');
 
         if (editor) {
-          clearInterval(checkInterval);
-          highlightElement(editor);
+          if (editor.textContent.trim() === prompt) {
+            // Already injected, just waiting for button or clicking
+          } else {
+            console.log("[GFormToGPT Claude] Editor found, injecting prompt...");
+            editor.focus();
+            
+            // Clear and insert
+            document.execCommand('selectAll', false, null);
+            document.execCommand('delete', false, null);
+            document.execCommand('insertText', false, prompt);
+          }
           
-          console.log("[GFormToGPT Claude] Editor found, injecting prompt...");
-          editor.focus();
-          
-          // Clear and insert
-          document.execCommand('selectAll', false, null);
-          document.execCommand('delete', false, null);
-          document.execCommand('insertText', false, prompt);
-          
-          // Small delay to allow Claude's UI to enable the send button
-          setTimeout(() => {
-            if (sendBtn) {
-              console.log("[GFormToGPT Claude] Send button detected, clicking...");
-              highlightElement(sendBtn, "#4caf50");
-              sendBtn.click();
-            } else {
-              console.log("[GFormToGPT Claude] Send button not found yet, manual click required.");
-            }
-          }, 800);
+          // Check if send button is enabled (Claude sometimes disables it briefly)
+          if (sendBtn && !sendBtn.disabled) {
+            clearInterval(checkInterval);
+            console.log("[GFormToGPT Claude] Send button detected and enabled, clicking...");
+            highlightElement(sendBtn, "#4caf50");
+            
+            // Simulate natural click
+            sendBtn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
+            sendBtn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+            sendBtn.click();
+          } else if (sendBtn && sendBtn.disabled) {
+            console.log("[GFormToGPT Claude] Send button found but disabled, waiting...");
+          }
         }
       }, 1000);
       
