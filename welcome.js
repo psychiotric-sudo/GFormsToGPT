@@ -1,34 +1,41 @@
 // Welcome page logic for GForm to GPT
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize Typed.js for the main title
-  if (typeof Typed !== 'undefined') {
+  const heroTitle = document.querySelector('#hero-title');
+  if (typeof Typed !== 'undefined' && heroTitle) {
     new Typed('#hero-title', {
-      strings: ['GForm to GPT'],
+      strings: ['GForm to GPT', 'Neural Automation.'],
       typeSpeed: 60,
       showCursor: false,
       onComplete: () => {
         // Hero subtitle animation
-        new Typed('#typed', {
-          strings: [
-            'Automate Google Forms with Neural Intelligence.',
-            'Seamless support for ChatGPT, Claude, and Gemini.',
-            'Bypass detection with Human-Mimetic Typing.',
-            'The future of productivity is here.'
-          ],
-          typeSpeed: 40,
-          backSpeed: 20,
-          backDelay: 2000,
-          loop: true
-        });
+        const typedEl = document.querySelector('#typed');
+        if (typedEl) {
+          new Typed('#typed', {
+            strings: [
+              'Automate Google Forms with Neural Intelligence.',
+              'Seamless support for ChatGPT, Claude, and Gemini.',
+              'Bypass detection with Human-Mimetic Typing.',
+              'The future of productivity is here.'
+            ],
+            typeSpeed: 40,
+            backSpeed: 20,
+            backDelay: 2000,
+            loop: true
+          });
+        }
         
         // Capability section title animation
-        new Typed('#feat-title', {
-          strings: ['Intelligent Automation', 'Neural Efficiency', 'Extreme Productivity'],
-          typeSpeed: 50,
-          backSpeed: 30,
-          backDelay: 3000,
-          loop: true
-        });
+        const featTitle = document.querySelector('#feat-title');
+        if (featTitle) {
+          new Typed('#feat-title', {
+            strings: ['Intelligent Automation', 'Neural Efficiency', 'Extreme Productivity'],
+            typeSpeed: 50,
+            backSpeed: 30,
+            backDelay: 3000,
+            loop: true
+          });
+        }
       }
     });
   }
@@ -65,5 +72,23 @@ document.addEventListener('DOMContentLoaded', () => {
         el.scrollIntoView({ behavior: 'smooth' });
       }, 500);
     }
+  }
+
+  // Moved from welcome.html to fix CSP
+  // Neural Simulation Typing
+  const simText = document.getElementById("sim-text");
+  if (simText) {
+    const phrase = "Quantum computing is a type of computation whose operations can harness the phenomena of quantum mechanics, such as superposition...";
+    let i = 0;
+    function type() {
+      if (i < phrase.length) {
+        simText.innerHTML = phrase.substring(0, i) + '<span class="sim-cursor"></span>';
+        i++;
+        setTimeout(type, 30 + Math.random() * 50);
+      } else {
+        setTimeout(() => { i = 0; type(); }, 3000);
+      }
+    }
+    setTimeout(type, 1000);
   }
 });

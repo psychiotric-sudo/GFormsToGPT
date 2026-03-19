@@ -1,4 +1,4 @@
-// Chrome Extension version of GForm to GPT v3.8.0
+// Chrome Extension version of GForm to GPT v3.8.6
 // Content script injected into Google Forms
 
 (function () {
@@ -12,9 +12,8 @@
   let useHumanTyping = false; 
   let verboseLogging = false;
   let formTitle = "";
-  let formDescription = "";
   let questionMap = new Map();
-  let formId = window.location.pathname.split("/")[3] || "default";
+  let pendingAnswers = null;
 
   // Load settings
   chrome.storage.local.get(["customPrompt", "ignoredKeywords", "humanTyping", "verboseLogging"], (data) => {
@@ -64,21 +63,6 @@
     .gf-btn:hover { filter: brightness(0.95); transform: translateY(-1px); }
     
     #gf-output { width: 100%; height: 80px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 12px; margin-bottom: 12px; resize: none; background: #f9f9f9; }
-
-    /* Review Screen */
-    #gf-review-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 2147483648; display: none; align-items: center; justify-content: center; }
-    #gf-review-modal.visible { display: flex; }
-    #gf-review-content { background: #fff; width: 90%; max-width: 600px; border-radius: 16px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
-    #gf-review-header { padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-    #gf-review-body { padding: 20px; overflow-y: auto; flex: 1; }
-    #gf-review-footer { padding: 20px; border-top: 1px solid #eee; display: flex; gap: 12px; }
-    
-    .review-item { margin-bottom: 20px; padding: 15px; border: 1px solid #f0f0f0; border-radius: 10px; background: #fafafa; }
-    .review-q { font-weight: 700; font-size: 14px; color: var(--gf-primary); margin-bottom: 8px; }
-    .review-a { font-size: 14px; color: #333; line-height: 1.5; }
-    .confidence-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; float: right; }
-    .conf-high { background: #dcfce7; color: #166534; }
-    .conf-med { background: #fef9c3; color: #854d0e; }
 
     #gf-toast-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 2147483649; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
     .gf-toast { padding: 12px 24px; border-radius: 50px; background: #333; color: #fff; font-size: 13px; font-weight: 500; opacity: 0; transform: translateY(20px); transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
@@ -141,7 +125,7 @@
       <div class="gf-section">
         <span class="gf-label">AI Intelligence Data</span>
         <textarea id="gf-output" placeholder="Paste response JSON here..."></textarea>
-        <button id="gf-review-btn" class="gf-btn gf-btn-success">Review & Fill Form</button>
+        <button id="gf-fill-btn" class="gf-btn gf-btn-success">Fill Form Now</button>
       </div>
       <div style="font-size:11px; color:#999; text-align:center;">
         Engineered by @chqrlzz | 2026
@@ -150,26 +134,9 @@
   `;
   document.body.appendChild(panel);
 
-  const reviewModal = document.createElement("div"); reviewModal.id = "gf-review-modal";
-  reviewModal.innerHTML = `
-    <div id="gf-review-content">
-      <div id="gf-review-header">
-        <h3 style="margin:0; font-size:18px;">Neural Verification Screen</h3>
-        <span style="font-size:12px; color:#666;">Verify answers before injection</span>
-      </div>
-      <div id="gf-review-body"></div>
-      <div id="gf-review-footer">
-        <button id="gf-cancel-review" class="gf-btn gf-btn-secondary" style="flex:1;">Discard</button>
-        <button id="gf-confirm-review" class="gf-btn gf-btn-success" style="flex:2;">Confirm & Fill Form</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(reviewModal);
-
   // ── Logic ──
   document.getElementById("gf-min").onclick = () => panel.classList.toggle("minimized");
   document.getElementById("gf-cls").onclick = () => panel.style.display = "none";
-  document.getElementById("gf-cancel-review").onclick = () => reviewModal.classList.remove("visible");
 
   const scanBtn = document.getElementById("gf-scan-btn");
   scanBtn.onclick = async () => {
@@ -240,10 +207,8 @@
     hideOverlay();
   };
 
-  const reviewBtn = document.getElementById("gf-review-btn");
-  const reviewBody = document.getElementById("gf-review-body");
-  let pendingAnswers = null;
-
+  const fillBtn = document.getElementById("gf-fill-btn");
+  
   function getFormattedAnswer(qd, val) {
     if (!val) return "";
     if (qd.type === "text" || qd.type === "textarea") return String(val);
@@ -255,38 +220,7 @@
     }).join(", ");
   }
 
-  reviewBtn.onclick = () => {
-    const raw = document.getElementById("gf-output").value.trim();
-    if (!raw) { showToast("Please paste the AI JSON response."); return; }
-
-    try {
-      const match = raw.match(/\{[\s\S]*\}/);
-      pendingAnswers = JSON.parse(match[0]);
-    } catch (e) {
-      showToast("Invalid JSON format.");
-      return;
-    }
-
-    reviewBody.innerHTML = "";
-    for (const [num, qd] of questionMap.entries()) {
-      const ans = pendingAnswers[num] || pendingAnswers[String(num)];
-      if (ans === undefined) continue;
-
-      const formatted = getFormattedAnswer(qd, ans);
-      const item = document.createElement("div");
-      item.className = "review-item";
-      item.innerHTML = `
-        <div class="review-q">Q${num}: ${qd.text}</div>
-        <div class="review-a">${formatted}</div>
-      `;
-      reviewBody.appendChild(item);
-    }
-
-    reviewModal.classList.add("visible");
-  };
-
-  document.getElementById("gf-confirm-review").onclick = async () => {
-    reviewModal.classList.remove("visible");
+  const performFilling = async () => {
     showOverlay("Injecting Neural Responses...");
     
     let filled = 0, total = 0;
@@ -314,9 +248,12 @@
           });
           filled++;
         } else if (qd.type === "text" || qd.type === "textarea") {
-          qd.container.querySelector('input, textarea').focus();
-          document.execCommand('insertText', false, String(val));
-          filled++;
+          const input = qd.container.querySelector('input, textarea');
+          if (input) {
+            input.focus();
+            document.execCommand('insertText', false, String(val));
+            filled++;
+          }
         }
         historyPayload.questions.push({ q: qd.text, a: formatted });
       } catch (e) { console.error(e); }
@@ -329,7 +266,23 @@
     showToast(`Form complete! Filled ${filled}/${total} questions.`);
     
     chrome.runtime.sendMessage({ action: "saveToHistory", payload: historyPayload });
-    chrome.runtime.sendMessage({ action: "trackFormFilled", payload: { filledCount: filled, totalCount: total, secondsSaved: filled * 10 } });
+    chrome.runtime.sendMessage({ action: "trackFormFilled", payload: { formTitle, filledCount: filled, totalCount: total, secondsSaved: filled * 10 } });
+  };
+
+  fillBtn.onclick = async () => {
+    const raw = document.getElementById("gf-output").value.trim();
+    if (!raw) { showToast("Please paste the AI JSON response."); return; }
+
+    try {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON found");
+      pendingAnswers = JSON.parse(match[0]);
+    } catch (e) {
+      showToast("Invalid JSON format.");
+      return;
+    }
+
+    await performFilling();
   };
 
   // Keyboard shortcut
@@ -338,7 +291,7 @@
       panel.style.display = panel.style.display === "none" ? "block" : "none";
     } else if (request.action === "autoFillForm") {
       document.getElementById("gf-output").value = request.rawJson;
-      reviewBtn.click();
+      fillBtn.click();
     }
   });
 

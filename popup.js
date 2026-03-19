@@ -1,4 +1,4 @@
-// Popup script for GFormToGPT v3.8.0
+// Popup script for GFormToGPT v3.8.6
 
 // ── Tab switching functionality ──
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -20,9 +20,16 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
 const historyList = document.getElementById("historyList");
 
 async function loadHistory() {
-  const data = await chrome.storage.local.get(["history"]);
+  const data = await chrome.storage.local.get(["history", "totalSecondsSaved", "formCount"]);
   const history = data.history || [];
   
+  // Update Dashboard
+  const totalSeconds = data.totalSecondsSaved || 0;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  document.getElementById("totalTimeSaved").textContent = `${minutes}m ${seconds}s`;
+  document.getElementById("totalFormsFilled").textContent = `${data.formCount || 0} forms automated`;
+
   if (history.length === 0) {
     historyList.innerHTML = '<div class="empty-history">No forms scanned yet.</div>';
     return;

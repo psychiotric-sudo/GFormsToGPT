@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GForm to GPT",
-  "version": "3.8.2",
+  "version": "3.8.6",
   "description": "Scan Google Forms, filter personal questions, and auto-fill with ChatGPT responses",
   "author": "@chqrlzz",
   "web_accessible_resources": [
@@ -12,6 +12,7 @@
   ],
   "permissions": [
     "tabs",
+    "activeTab",
     "scripting",
     "cookies",
     "browsingData",
