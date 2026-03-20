@@ -1,11 +1,19 @@
-// Claude.ai content script for GFormToGPT automation
+// Claude.ai content script for GFormToGPT v3.8.8 - Neural Interface
 (function () {
   "use strict";
 
   console.log("[GFormToGPT Claude] Script loaded");
 
+  let verboseLogging = false;
+  chrome.storage.local.get(["verboseLogging"], (data) => {
+    verboseLogging = !!data.verboseLogging;
+    if (verboseLogging) console.log("[GFormToGPT Claude] Verbose logging enabled");
+  });
+
+  function log(...args) { if (verboseLogging) console.log("[GFormToGPT Claude]", ...args); }
+
   const isGFormSession = window.location.href.includes("q=") || document.referrer.includes("docs.google.com/forms");
-  if (!isGFormSession) return;
+  if (!isGFormSession) { log("Not a GForm session"); return; }
 
   function highlightElement(el, color = "#3d5a80") {
     if (!el) return;
@@ -16,49 +24,35 @@
   function autoSubmitPrompt() {
     const urlParams = new URLSearchParams(window.location.search);
     const prompt = urlParams.get('q');
-    
     if (prompt) {
-      console.log("[GFormToGPT Claude] Prompt found, attempting auto-submit...");
+      log("Prompt found, attempting auto-submit...");
       const checkInterval = setInterval(() => {
-        // Claude uses a contenteditable div for input
         const editor = document.querySelector('[contenteditable="true"]');
-        
-        // Target the specific button provided by the user
         const sendBtn = document.querySelector('button[aria-label="Send message"]') || 
                         document.querySelector('button._claude_x02hl_108') ||
                         document.querySelector('button:has(svg path[d*="M208.49"])') ||
                         document.querySelector('button[type="button"] svg path[d*="M208.49"]')?.closest('button');
 
         if (editor) {
-          if (editor.textContent.trim() === prompt) {
-            // Already injected, just waiting for button or clicking
-          } else {
-            console.log("[GFormToGPT Claude] Editor found, injecting prompt...");
+          if (editor.textContent.trim() === prompt) { /* Injected */ } 
+          else {
+            log("Injecting prompt...");
             editor.focus();
-            
-            // Clear and insert
             document.execCommand('selectAll', false, null);
             document.execCommand('delete', false, null);
             document.execCommand('insertText', false, prompt);
           }
           
-          // Check if send button is enabled (Claude sometimes disables it briefly)
           if (sendBtn && !sendBtn.disabled) {
             clearInterval(checkInterval);
-            console.log("[GFormToGPT Claude] Send button detected and enabled, clicking...");
+            log("Clicking send...");
             highlightElement(sendBtn, "#4caf50");
-            
-            // Simulate natural click
             sendBtn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
             sendBtn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
             sendBtn.click();
-          } else if (sendBtn && sendBtn.disabled) {
-            console.log("[GFormToGPT Claude] Send button found but disabled, waiting...");
           }
         }
       }, 1000);
-      
-      // Stop checking after 15 seconds to prevent infinite loops
       setTimeout(() => clearInterval(checkInterval), 15000);
     }
   }
@@ -66,25 +60,22 @@
   let lastProcessedJson = "";
 
   function extractAndSendJson() {
-    // Claude often puts JSON in prose or code blocks
     const blocks = document.querySelectorAll("pre, code, .prose");
     for (const block of blocks) {
       let text = block.textContent.trim();
-      // Look for JSON structure specifically with question keys like "1":
-      if (text.startsWith("{") && text.endsWith("}") && /"\d+"(\s*):/.test(text)) {
-        if (text === lastProcessedJson) continue;
-        try {
-          const parsed = JSON.parse(text);
-          lastProcessedJson = text;
-          console.log("[GFormToGPT Claude] Valid JSON detected and sent to form.");
-          chrome.runtime.sendMessage({
-            action: "chatGptResponseReceived",
-            data: parsed,
-            rawJson: text
-          });
-          highlightElement(block, "#4caf50");
-        } catch (e) {
-          // Not a complete or valid JSON yet
+      const startIdx = text.indexOf('{'), endIdx = text.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        const potentialJson = text.substring(startIdx, endIdx + 1);
+        if (potentialJson === lastProcessedJson) continue;
+        if (/"\d+"(\s*):/.test(potentialJson)) {
+          try {
+            const cleanedText = potentialJson.replace(/[\u201C\u201D]/g, '"');
+            const parsed = JSON.parse(cleanedText);
+            log("Valid JSON detected!", parsed);
+            lastProcessedJson = potentialJson;
+            chrome.runtime.sendMessage({ action: "chatGptResponseReceived", data: parsed, rawJson: cleanedText });
+            highlightElement(block, "#4caf50");
+          } catch (e) { if (potentialJson.includes('"1":')) log("Parse Err:", e.message); }
         }
       }
     }
@@ -93,7 +84,5 @@
   const observer = new MutationObserver(extractAndSendJson);
   observer.observe(document.body, { childList: true, subtree: true });
   autoSubmitPrompt();
-  
-  // Periodically check just in case
   setInterval(extractAndSendJson, 2000);
 })();

@@ -1,4 +1,4 @@
-// Chrome Extension version of GForm to GPT v3.8.6
+// Chrome Extension version of GForm to GPT v3.8.8 - Neural Interface
 // Content script injected into Google Forms
 
 (function () {
@@ -24,21 +24,16 @@
       const userKeywords = data.ignoredKeywords.split(",").map((k) => k.trim().toLowerCase()).filter(k => k);
       personalKeywords = [...new Set([...personalKeywords, ...userKeywords])];
     }
+    if (verboseLogging) console.log("[GFormToGPT] Settings synchronized");
   });
+
+  function log(...args) { if (verboseLogging) console.log("[GFormToGPT]", ...args); }
 
   // ── UI Styles ──
   const style = document.createElement("style");
   style.textContent = `
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
-    
-    :root {
-      --gf-primary: #3d5a80;
-      --gf-success: #4caf50;
-      --gf-bg: #f5f5f5;
-      --gf-surface: #ffffff;
-      --gf-text: #202124;
-    }
-
+    :root { --gf-primary: #3d5a80; --gf-success: #4caf50; --gf-bg: #f5f5f5; --gf-surface: #ffffff; --gf-text: #202124; }
     #gf-panel { position: fixed; top: 20px; right: 20px; width: 420px; background: var(--gf-bg); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 2147483647; font-family: 'Outfit', sans-serif; overflow: hidden; border: 1px solid #ddd; }
     #gf-panel.minimized #gf-body { display: none; }
     #gf-header { background: linear-gradient(135deg, #3d5a80 0%, #2d4563 100%); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; cursor: grab; color: #fff; }
@@ -46,24 +41,19 @@
     #gf-header .controls { display: flex; gap: 8px; }
     #gf-header button { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
     #gf-header button:hover { background: rgba(255,255,255,0.3); }
-
     #gf-body { padding: 20px; max-height: 70vh; overflow-y: auto; background: var(--gf-surface); }
     .gf-section { margin-bottom: 20px; }
     .gf-label { font-size: 11px; font-weight: 700; color: var(--gf-primary); text-transform: uppercase; margin-bottom: 8px; display: block; }
-    
     #gf-status-overlay { position: fixed; bottom: 30px; left: 30px; background: rgba(0,0,0,0.85); color: #fff; padding: 10px 20px; border-radius: 50px; font-family: 'Outfit', sans-serif; font-size: 13px; z-index: 2147483646; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transform: translateY(100px); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; }
     #gf-status-overlay.visible { transform: translateY(0); opacity: 1; }
     .gf-pulse { width: 8px; height: 8px; background: #4caf50; border-radius: 50%; animation: gf-pulse 1.5s infinite; }
     @keyframes gf-pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
-
     .gf-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-family: inherit; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
     .gf-btn-primary { background: var(--gf-primary); color: #fff; }
     .gf-btn-success { background: var(--gf-success); color: #fff; }
     .gf-btn-secondary { background: #eee; color: #555; }
     .gf-btn:hover { filter: brightness(0.95); transform: translateY(-1px); }
-    
     #gf-output { width: 100%; height: 80px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 12px; margin-bottom: 12px; resize: none; background: #f9f9f9; }
-
     #gf-toast-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 2147483649; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
     .gf-toast { padding: 12px 24px; border-radius: 50px; background: #333; color: #fff; font-size: 13px; font-weight: 500; opacity: 0; transform: translateY(20px); transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     .gf-toast.visible { opacity: 1; transform: translateY(0); }
@@ -71,65 +61,43 @@
   document.head.appendChild(style);
 
   // ── Helper Functions ──
-  function showOverlay(msg) {
-    overlay.innerHTML = `<div class="gf-pulse"></div><span>${msg}</span>`;
-    overlay.classList.add("visible");
-  }
+  function showOverlay(msg) { overlay.innerHTML = `<div class="gf-pulse"></div><span>${msg}</span>`; overlay.classList.add("visible"); log("Overlay:", msg); }
   function hideOverlay() { overlay.classList.remove("visible"); }
-  
   function showToast(msg) {
-    const toast = document.createElement("div");
-    toast.className = "gf-toast";
-    toast.textContent = msg;
+    const toast = document.createElement("div"); toast.className = "gf-toast"; toast.textContent = msg;
     document.getElementById("gf-toast-container").appendChild(toast);
     setTimeout(() => toast.classList.add("visible"), 50);
-    setTimeout(() => {
-      toast.classList.remove("visible");
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    setTimeout(() => { toast.classList.remove("visible"); setTimeout(() => toast.remove(), 300); }, 3000);
+    log("Toast:", msg);
   }
-
   function isPersonalQuestion(text) {
     const lower = text.toLowerCase();
     return personalKeywords.some(k => lower.includes(k));
   }
-
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+  function getFormEmail() {
+    const emailEl = document.querySelector('.EbMsme');
+    return emailEl ? emailEl.textContent.trim() : "Unknown Form Email";
+  }
 
   // ── UI Construction ──
-  const overlay = document.createElement("div"); overlay.id = "gf-status-overlay";
-  document.body.appendChild(overlay);
-
-  const toastCont = document.createElement("div"); toastCont.id = "gf-toast-container";
-  document.body.appendChild(toastCont);
-
+  const overlay = document.createElement("div"); overlay.id = "gf-status-overlay"; document.body.appendChild(overlay);
+  const toastCont = document.createElement("div"); toastCont.id = "gf-toast-container"; document.body.appendChild(toastCont);
   const panel = document.createElement("div"); panel.id = "gf-panel";
   panel.innerHTML = `
-    <div id="gf-header">
-      <h2>GForm to GPT</h2>
-      <div class="controls">
-        <button id="gf-min" title="Minimize">－</button>
-        <button id="gf-cls" title="Close">×</button>
-      </div>
-    </div>
+    <div id="gf-header"><h2>GForm to GPT</h2><div class="controls"><button id="gf-min" title="Minimize">－</button><button id="gf-cls" title="Close">×</button></div></div>
     <div id="gf-body">
-      <div class="gf-section">
-        <span class="gf-label">Engine Configuration</span>
+      <div class="gf-section"><span class="gf-label">Engine Configuration</span>
         <select id="gf-ai-type" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; font-family:inherit; margin-bottom:12px;">
-          <option value="chatgpt">OpenAI ChatGPT</option>
-          <option value="claude">Anthropic Claude 3.5</option>
-          <option value="gemini">Google Gemini 1.5</option>
+          <option value="chatgpt">OpenAI ChatGPT</option><option value="claude">Anthropic Claude 3.5</option><option value="gemini">Google Gemini 1.5</option>
         </select>
         <button id="gf-scan-btn" class="gf-btn gf-btn-primary">Scan & Extract Questions</button>
       </div>
-      <div class="gf-section">
-        <span class="gf-label">AI Intelligence Data</span>
+      <div class="gf-section"><span class="gf-label">AI Intelligence Data</span>
         <textarea id="gf-output" placeholder="Paste response JSON here..."></textarea>
         <button id="gf-fill-btn" class="gf-btn gf-btn-success">Fill Form Now</button>
       </div>
-      <div style="font-size:11px; color:#999; text-align:center;">
-        Engineered by @chqrlzz | 2026
-      </div>
+      <div style="font-size:11px; color:#999; text-align:center;">Engineered by @chqrlzz | 2026</div>
     </div>
   `;
   document.body.appendChild(panel);
@@ -151,14 +119,10 @@
     for (const c of containers) {
       let h = c.querySelector('[role="heading"]') || c.querySelector('legend');
       if (!h) continue;
-      
       let txt = h.textContent.trim();
       if (isPersonalQuestion(txt)) { pc++; continue; }
-
       qc++;
       const qd = { number: qc, text: txt, type: null, options: [], container: c };
-      
-      // Determine type
       if (c.querySelector('[role="radio"]')) qd.type = "radio";
       else if (c.querySelector('[role="checkbox"]')) qd.type = "checkbox";
       else if (c.querySelector('[role="combobox"]')) qd.type = "dropdown";
@@ -166,13 +130,11 @@
       else if (c.querySelector('input')) qd.type = "text";
 
       if (!qd.type) continue;
-
       if (qd.type === "radio" || qd.type === "checkbox") {
         c.querySelectorAll('[role="radio"], [role="checkbox"]').forEach((el, i) => {
           qd.options.push({ letter: String.fromCharCode(97 + i), text: el.getAttribute("aria-label") || el.textContent.trim(), element: el });
         });
       }
-
       questionMap.set(qc, qd);
       list += `Q${qc}. [${qd.type.toUpperCase()}] ${txt}\n`;
       qd.options.forEach(o => list += `   ${o.letter}) ${o.text}\n`);
@@ -181,19 +143,11 @@
 
     const titleEl = document.querySelector('div[role="heading"][aria-level="1"]') || document.querySelector('.freebirdFormviewerViewHeaderTitle');
     formTitle = titleEl ? titleEl.textContent.trim() : "Untitled Form";
-
     showToast(`Scanned ${qc} questions. ${pc} filtered.`);
-    
-    const prompt = `Act as an intelligent form-filler. ${customInstructions}
-    Output ONLY valid JSON.
-    JSON keys: question numbers ("1", "2").
-    For RADIO/DROPDOWN/CHECKBOX: Use lowercase letters ("a", "b").
-    For TEXT/TEXTAREA: Provide a factual, detailed response.
 
-    QUESTIONS:
-    ${list}
-
-    JSON:`;
+    const prompt = `Act as an intelligent form-filler. Search the internet first for factual answers. ${customInstructions}
+    Output ONLY valid JSON. Keys: numbers ("1"). Values: lowercase letters ("a") or detailed text.
+    QUESTIONS:\n${list}\nJSON:`;
 
     const aiType = document.getElementById("gf-ai-type").value;
     let url = "";
@@ -203,16 +157,14 @@
 
     showOverlay("Redirecting to AI...");
     await sleep(800);
-    chrome.runtime.sendMessage({ action: "openAI", url: url, aiType });
+    chrome.runtime.sendMessage({ action: "openAI", url: url, aiType, email: getFormEmail(), scannedCount: qc });
     hideOverlay();
   };
 
   const fillBtn = document.getElementById("gf-fill-btn");
-  
   function getFormattedAnswer(qd, val) {
     if (!val) return "";
     if (qd.type === "text" || qd.type === "textarea") return String(val);
-    
     const vals = Array.isArray(val) ? val : [val];
     return vals.map(v => {
       const opt = qd.options.find(o => o.letter === String(v).toLowerCase());
@@ -222,7 +174,6 @@
 
   const performFilling = async () => {
     showOverlay("Injecting Neural Responses...");
-    
     let filled = 0, total = 0;
     const historyPayload = { formTitle, questions: [] };
 
@@ -230,7 +181,6 @@
       const val = pendingAnswers[num] || pendingAnswers[String(num)];
       if (val === undefined) continue;
       total++;
-
       const formatted = getFormattedAnswer(qd, val);
       qd.container.scrollIntoView({ behavior: "smooth", block: "center" });
       qd.container.style.outline = "2px solid var(--gf-success)";
@@ -256,43 +206,29 @@
           }
         }
         historyPayload.questions.push({ q: qd.text, a: formatted });
-      } catch (e) { console.error(e); }
-      
-      await sleep(100);
-      qd.container.style.outline = "";
+      } catch (e) { log("Fill Err:", e); }
+      await sleep(100); qd.container.style.outline = "";
     }
-
     hideOverlay();
     showToast(`Form complete! Filled ${filled}/${total} questions.`);
-    
     chrome.runtime.sendMessage({ action: "saveToHistory", payload: historyPayload });
-    chrome.runtime.sendMessage({ action: "trackFormFilled", payload: { formTitle, filledCount: filled, totalCount: total, secondsSaved: filled * 10 } });
+    chrome.runtime.sendMessage({ action: "trackFormFilled", payload: { formTitle, filledCount: filled, totalCount: total, secondsSaved: filled * 10, email: getFormEmail() } });
   };
 
   fillBtn.onclick = async () => {
     const raw = document.getElementById("gf-output").value.trim();
-    if (!raw) { showToast("Please paste the AI JSON response."); return; }
-
+    if (!raw) { showToast("Paste JSON first."); return; }
     try {
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("No JSON found");
-      pendingAnswers = JSON.parse(match[0]);
-    } catch (e) {
-      showToast("Invalid JSON format.");
-      return;
-    }
-
+      const startIdx = raw.indexOf('{'), endIdx = raw.lastIndexOf('}');
+      if (startIdx === -1 || endIdx === -1) throw new Error("No JSON boundaries");
+      pendingAnswers = JSON.parse(raw.substring(startIdx, endIdx + 1));
+      log("Parsed JSON:", pendingAnswers);
+    } catch (e) { showToast("Invalid JSON format."); return; }
     await performFilling();
   };
 
-  // Keyboard shortcut
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "togglePanel") {
-      panel.style.display = panel.style.display === "none" ? "block" : "none";
-    } else if (request.action === "autoFillForm") {
-      document.getElementById("gf-output").value = request.rawJson;
-      fillBtn.click();
-    }
+  chrome.runtime.onMessage.addListener((request) => {
+    if (request.action === "togglePanel") panel.style.display = panel.style.display === "none" ? "block" : "none";
+    else if (request.action === "autoFillForm") { document.getElementById("gf-output").value = request.rawJson; fillBtn.click(); }
   });
-
 })();

@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "GForm to GPT",
-  "version": "3.8.6",
+  "version": "3.8.8",
   "description": "Scan Google Forms, filter personal questions, and auto-fill with ChatGPT responses",
   "author": "@chqrlzz",
   "web_accessible_resources": [
     {
-      "resources": ["welcome.html", "bg.jpg", "welcome.js", "typed.js"],
+      "resources": ["welcome.html", "bg.jpg", "welcome.js", "typed.js", "farewell.html"],
       "matches": ["<all_urls>"]
     }
   ],
@@ -18,14 +18,17 @@
     "browsingData",
     "storage",
     "notifications",
-    "alarms"
+    "alarms",
+    "identity"
   ],
   "host_permissions": [
+    "<all_urls>",
     "https://docs.google.com/forms/*",
     "https://chatgpt.com/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*",
-    "https://*.workers.dev/*"
+    "https://*.workers.dev/*",
+    "https://discord.com/*"
   ],
   "content_scripts": [
     {
