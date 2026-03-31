@@ -167,18 +167,6 @@
         line-height: 1.5;
       }
 
-      .warning-box {
-        background: #fff3cd;
-        padding: 12px;
-        border-radius: 6px;
-        font-size: 13px;
-        margin-bottom: 12px;
-        color: #856404;
-        border-left: 4px solid #ffc107;
-        border: 1px solid #fbbf24;
-        line-height: 1.5;
-      }
-
       .status {
         padding: 12px;
         border-radius: 6px;
@@ -222,6 +210,17 @@
       .btn-outline { background: transparent; border: 1px solid #ddd; color: #666; }
       .btn-outline:hover { background: #f9f9f9; color: #3d5a80; border-color: #3d5a80; }
 
+      .legal-disclaimer {
+        font-size: 10px;
+        color: #999;
+        margin-top: 8px;
+        text-align: center;
+      }
+      .legal-disclaimer a {
+        color: #3d5a80;
+        text-decoration: none;
+      }
+
       /* History Styles */
       .history-item {
         border: 1px solid #e0e0e0;
@@ -254,6 +253,23 @@
       .empty-history { text-align: center; padding: 40px 20px; color: #999; }
       
       .export-btn-container { margin-top: 10px; }
+
+      select, textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        font-family: inherit;
+        font-size: 13px;
+        background: #fff;
+      }
+      textarea#gf-output {
+        height: 100px;
+        resize: vertical;
+        font-family: monospace;
+        background: #f9f9f9;
+        margin-bottom: 12px;
+      }
     </style>
   </head>
   <body>
@@ -263,30 +279,55 @@
           <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
           <div>
             <h1>GForm to GPT</h1>
-            <div class="subtitle">v3.8.6</div>
+            <div class="subtitle">v4.1.5</div>
           </div>
         </div>
         <div style="font-size: 10px; opacity: 0.6; text-align: right;">Neural Automation</div>
       </div>
 
       <div class="tabs">
-        <button class="tab-btn active" data-tab="history">
+        <button class="tab-btn active" data-tab="engine">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          <span>Engine</span>
+        </button>
+        <button class="tab-btn" data-tab="history">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           <span>History</span>
-        </button>
-        <button class="tab-btn" data-tab="clear">
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-          <span>Clear Data</span>
         </button>
         <button class="tab-btn" data-tab="settings">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           <span>Settings</span>
         </button>
+        <button class="tab-btn" data-tab="clear">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <span>Clear</span>
+        </button>
       </div>
 
       <div class="popup-body">
+        <!-- Engine Tab -->
+        <div id="engine" class="tab-content active">
+          <div class="section">
+            <div class="section-title">Engine Configuration</div>
+            <select id="gf-ai-type" style="margin-bottom:12px;">
+              <option value="chatgpt">OpenAI ChatGPT</option>
+              <option value="claude">Anthropic Claude 3.5</option>
+              <option value="gemini">Google Gemini 1.5</option>
+            </select>
+            <button id="gf-scan-btn" class="btn btn-primary" style="width:100%;">Scan & Extract Questions</button>
+            <div class="legal-disclaimer">By clicking, you agree to our <a href="welcome.html#legal" target="_blank">Privacy & Terms</a>.</div>
+          </div>
+          <div class="section">
+            <div class="section-title">AI Intelligence Data</div>
+            <textarea id="gf-output" placeholder="Paste response JSON here..."></textarea>
+            <button id="gf-fill-btn" class="btn btn-success" style="width:100%;">Fill Form Now</button>
+            <div class="legal-disclaimer">By clicking, you agree to our <a href="welcome.html#legal" target="_blank">Privacy & Terms</a>.</div>
+          </div>
+          <div id="engineStatus" class="status"></div>
+        </div>
+
         <!-- History Tab -->
-        <div id="history" class="tab-content active">
+        <div id="history" class="tab-content">
           <div class="section" id="dashboard" style="background: linear-gradient(135deg, #3d5a80 0%, #2d4563 100%); color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
             <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px;">Human Time Saved</div>
             <div id="totalTimeSaved" style="font-size: 32px; font-weight: 700;">0m 0s</div>
@@ -306,7 +347,6 @@
             <div class="section-title">System</div>
             <div class="btn-group">
               <button id="checkUpdateBtn" class="btn btn-primary">Check for Updates</button>
-              <button id="downloadUpdateBtn" class="btn btn-success">Download UPDATE.bat</button>
               <button id="viewFullLegalBtn" class="btn btn-outline">Terms & Privacy Policy</button>
             </div>
             <div id="updateStatus" class="status"></div>
@@ -315,18 +355,27 @@
           <div class="section">
             <div class="section-title">Filling Mode</div>
             <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; margin-bottom:8px;">
-              <input type="checkbox" id="humanTyping" style="margin-right:8px;" />
+              <input type="checkbox" id="humanTyping" style="margin-right:8px;" checked />
               Simulate Human Typing (Bypass Detection)
             </label>
             <label style="display:flex; align-items:center; cursor:pointer; font-size:12px;">
-              <input type="checkbox" id="verboseLogging" style="margin-right:8px;" />
+              <input type="checkbox" id="verboseLogging" style="margin-right:8px;" checked />
               Verbose Logging (Development Mode)
             </label>
           </div>
 
           <div class="section">
+            <div class="section-title">Diagnostic Control</div>
+            <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; margin-bottom:8px;">
+              <input type="checkbox" id="diagnosticToggle" style="margin-right:8px;" checked />
+              Diagnostic
+            </label>
+            <div id="diagStatus" style="font-size: 10px; color: #3d5a80; font-weight: 600;"></div>
+          </div>
+
+          <div class="section">
             <div class="section-title">Custom Instructions</div>
-            <textarea id="customPrompt" placeholder="e.g. Provide short answers only..." style="width:100%; height:60px; padding:8px; border:1px solid #ddd; border-radius:4px; font-size:12px; resize:vertical;"></textarea>
+            <textarea id="customPrompt" placeholder="e.g. Provide short answers only..." style="height:60px; resize:vertical;"></textarea>
           </div>
 
           <div class="section">

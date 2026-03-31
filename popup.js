@@ -1,4 +1,4 @@
-// Popup script for GFormToGPT v3.8.8 - Neural Interface
+// Popup script for GFormToGPT v4.1.5 - Neural Interface
 
 // ── Tab switching functionality ──
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -23,7 +23,6 @@ async function loadHistory() {
   const data = await chrome.storage.local.get(["history", "totalSecondsSaved", "formCount"]);
   const history = data.history || [];
 
-  // Update Dashboard
   const totalSeconds = data.totalSecondsSaved || 0;
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -53,9 +52,7 @@ async function loadHistory() {
             </div>
           `).join('')}
           <div class="export-btn-container">
-            <button class="btn btn-outline export-btn" style="width:100%; font-size:11px; padding:6px;">
-              Export to Text
-            </button>
+            <button class="btn btn-outline export-btn" style="width:100%; font-size:11px; padding:6px;">Export to Text</button>
           </div>
         </div>
       </div>
@@ -85,47 +82,135 @@ function exportEntry(entry) {
   URL.revokeObjectURL(url);
 }
 
+// ── Engine Logic ──
+const scanBtn = document.getElementById("gf-scan-btn");
+const fillBtn = document.getElementById("gf-fill-btn");
+const aiTypeSelect = document.getElementById("gf-ai-type");
+const outputTextarea = document.getElementById("gf-output");
+const engineStatus = document.getElementById("engineStatus");
+
+function showEngineStatus(msg, type = "loading") {
+  if (!engineStatus) return;
+  engineStatus.className = `status ${type}`;
+  engineStatus.textContent = msg;
+  engineStatus.style.display = "block";
+}
+
+if (scanBtn) {
+  scanBtn.onclick = async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url.includes("docs.google.com/forms")) {
+      showEngineStatus("Please open a Google Form first.", "error");
+      return;
+    }
+
+    showEngineStatus("Scanning form questions...");
+    chrome.tabs.sendMessage(tab.id, { action: "scanForm" }, async (response) => {
+      if (chrome.runtime.lastError) {
+        showEngineStatus("Could not connect to page. Refresh the form.", "error");
+        return;
+      }
+
+      if (response && response.success) {
+        showEngineStatus(`Scanned ${response.qc} questions.`, "success");
+        const aiType = aiTypeSelect.value;
+        let url = "";
+        if (aiType === "claude") url = `https://claude.ai/new`;
+        else if (aiType === "gemini") url = `https://gemini.google.com/app`;
+        else url = `https://chatgpt.com/`;
+
+        await chrome.storage.local.set({ pendingPrompt: response.prompt, pendingAiType: aiType, lastGFormTabId: tab.id });
+
+        setTimeout(() => {
+          showEngineStatus("Redirecting to AI...");
+          chrome.runtime.sendMessage({ action: "openAI", url: url, aiType, email: response.email, scannedCount: response.qc, fromTabId: tab.id });
+        }, 800);
+      } else {
+        showEngineStatus(response?.error || "Scan failed.", "error");
+      }
+    });
+  };
+}
+
+if (fillBtn) {
+  fillBtn.onclick = async () => {
+    const raw = outputTextarea.value.trim();
+    if (!raw) {
+      showEngineStatus("Please paste the AI JSON response first.", "error");
+      return;
+    }
+
+    let answers;
+    try {
+      const startIdx = raw.indexOf('{'), endIdx = raw.lastIndexOf('}');
+      if (startIdx === -1 || endIdx === -1) throw new Error("No JSON boundaries");
+      answers = JSON.parse(raw.substring(startIdx, endIdx + 1));
+    } catch (e) {
+      showEngineStatus("Invalid JSON format.", "error");
+      return;
+    }
+
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return;
+
+    showEngineStatus("Injecting responses...", "loading");
+    chrome.tabs.sendMessage(tab.id, { action: "fillForm", answers }, (response) => {
+      if (chrome.runtime.lastError) { showEngineStatus("Connection lost. Refresh.", "error"); return; }
+      if (response && response.success) {
+        showEngineStatus(`Filled ${response.filled}/${response.total} questions.`, "success");
+        loadHistory();
+      } else {
+        showEngineStatus("Filling failed.", "error");
+      }
+    });
+  };
+}
+
 // ── Settings Logic ──
 const customPromptInput = document.getElementById("customPrompt");
 const humanTypingInput = document.getElementById("humanTyping");
 const verboseLoggingInput = document.getElementById("verboseLogging");
+const diagnosticToggle = document.getElementById("diagnosticToggle");
 const saveSettingsBtn = document.getElementById("saveSettings");
 const settingsStatus = document.getElementById("settingsStatus");
 const checkUpdateBtn = document.getElementById("checkUpdateBtn");
 const updateStatus = document.getElementById("updateStatus");
 
 document.addEventListener("DOMContentLoaded", () => {
-  const params = new URLSearchParams(window.location.search);
-  const targetTabId = params.get("tab") || "dashboard";
-  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  const targetTab = document.getElementById(targetTabId);
-  const targetBtn = document.querySelector(`[data-tab="${targetTabId}"]`);
-  if (targetTab && targetBtn) {
-    targetTab.classList.add("active");
-    targetBtn.classList.add("active");
-    if (targetTabId === "history") loadHistory();
-  }
-  if (targetTabId === "dashboard") loadHistory(); 
-});
+  loadHistory();
+  
+  chrome.storage.local.get(["customPrompt", "humanTyping", "verboseLogging", "diagnosticEnabled", "diagnosticCaptured"], (data) => {
+    if (data.customPrompt && customPromptInput) customPromptInput.value = data.customPrompt;
+    
+    // Default humanTyping to true if not set
+    const humanTypingEnabled = data.humanTyping !== undefined ? data.humanTyping : true;
+    if (humanTypingInput) humanTypingInput.checked = humanTypingEnabled;
+    
+    // Default verboseLogging to true if not set
+    const verbLogEnabled = data.verboseLogging !== undefined ? data.verboseLogging : true;
+    if (verboseLoggingInput) verboseLoggingInput.checked = verbLogEnabled;
 
-chrome.storage.local.get(["customPrompt", "humanTyping", "verboseLogging"], (data) => {
-  if (data.customPrompt && customPromptInput) customPromptInput.value = data.customPrompt;
-  if (data.humanTyping !== undefined && humanTypingInput) humanTypingInput.checked = data.humanTyping;
-  if (data.verboseLogging !== undefined && verboseLoggingInput) verboseLoggingInput.checked = data.verboseLogging;
+    // Default diagnosticEnabled to true if not set
+    const diagEnabled = data.diagnosticEnabled !== undefined ? data.diagnosticEnabled : true;
+    if (diagnosticToggle) diagnosticToggle.checked = diagEnabled;
+  });
 });
 
 if (saveSettingsBtn) {
   saveSettingsBtn.addEventListener("click", () => {
+    const isDiagEnabled = diagnosticToggle ? diagnosticToggle.checked : true;
+    const isVerbLogEnabled = verboseLoggingInput ? verboseLoggingInput.checked : true;
+    
     chrome.storage.local.set({
       customPrompt: customPromptInput.value.trim(),
       humanTyping: humanTypingInput.checked,
-      verboseLogging: verboseLoggingInput.checked,
+      verboseLogging: isVerbLogEnabled,
+      diagnosticEnabled: isDiagEnabled
     }, () => {
       settingsStatus.className = "status success";
       settingsStatus.textContent = "✓ Settings saved!";
       settingsStatus.style.display = "block";
-      setTimeout(() => settingsStatus.style.display = "none", 2000);
+      setTimeout(() => { if (settingsStatus) settingsStatus.style.display = "none"; }, 2000);
     });
   });
 }
@@ -139,8 +224,8 @@ if (checkUpdateBtn) {
     chrome.runtime.sendMessage({ action: "manualUpdateCheck" }, (response) => {
       checkUpdateBtn.disabled = false;
       updateStatus.className = "status success";
-      updateStatus.textContent = (response && response.updateAvailable) ? `✓ New version ${response.version} found!` : "✓ You are on the latest version.";
-      setTimeout(() => updateStatus.style.display = "none", 3000);
+      updateStatus.textContent = (response && response.updateAvailable) ? `✓ New version ${response.version} found!` : "✓ Latest version.";
+      setTimeout(() => { if (updateStatus) updateStatus.style.display = "none"; }, 3000);
     });
   });
 }

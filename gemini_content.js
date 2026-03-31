@@ -1,4 +1,4 @@
-// Gemini content script for GFormToGPT v3.8.8 - Neural Interface
+// Gemini content script for GFormToGPT v4.1.5 - Neural Interface
 (function () {
   "use strict";
 
@@ -7,13 +7,9 @@
   let verboseLogging = false;
   chrome.storage.local.get(["verboseLogging"], (data) => {
     verboseLogging = !!data.verboseLogging;
-    if (verboseLogging) console.log("[GFormToGPT Gemini] Verbose logging enabled");
   });
 
   function log(...args) { if (verboseLogging) console.log("[GFormToGPT Gemini]", ...args); }
-
-  const isGFormSession = window.location.href.includes("q=") || document.referrer.includes("docs.google.com/forms");
-  if (!isGFormSession) { log("Not a GForm session"); return; }
 
   function highlightElement(el, color = "#3d5a80") {
     if (!el) return;
@@ -22,54 +18,67 @@
   }
 
   function autoSubmitPrompt() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const prompt = urlParams.get('q');
-    if (prompt) {
-      log("Prompt found, attempting auto-submit...");
-      const checkInterval = setInterval(() => {
-        const editor = document.querySelector('.ql-editor[contenteditable="true"]') || 
-                       document.querySelector('div[contenteditable="true"][role="textbox"]');
-        const sendBtn = document.querySelector('button[aria-label="Send message"]') || 
-                        document.querySelector('.send-button-container button');
+    chrome.storage.local.get(["pendingPrompt", "pendingAiType"], (data) => {
+      if (data.pendingPrompt && data.pendingAiType === "gemini") {
+        const prompt = data.pendingPrompt;
+        log("Pending prompt found, attempting injection...");
 
-        if (editor) {
-          clearInterval(checkInterval);
-          highlightElement(editor);
-          log("Injecting prompt into Gemini...");
-          editor.focus();
-          document.execCommand('insertText', false, prompt);
-          setTimeout(() => {
-            if (sendBtn && !sendBtn.disabled) {
-                log("Clicking send button...");
-                highlightElement(sendBtn, "#4caf50");
-                sendBtn.click();
+        let attempts = 0;
+        const checkInterval = setInterval(() => {
+          attempts++;
+          const editor = document.querySelector('.ql-editor[contenteditable="true"]') || 
+                         document.querySelector('div[contenteditable="true"][role="textbox"]') ||
+                         document.querySelector('.rich-textarea');
+          const sendBtn = document.querySelector('button[aria-label="Send message"]') || 
+                          document.querySelector('.send-button-container button') ||
+                          document.querySelector('button:has(mat-icon)');
+
+          if (editor) {
+            if (editor.textContent.includes("JSON")) {
+                if (sendBtn && !sendBtn.disabled) {
+                    clearInterval(checkInterval);
+                    log("Clicking send button...");
+                    highlightElement(sendBtn, "#4caf50");
+                    setTimeout(() => { 
+                        sendBtn.click();
+                        sendBtn.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+                        chrome.storage.local.remove(["pendingPrompt", "pendingAiType"]);
+                    }, 500);
+                }
+                return;
             }
-          }, 1000);
-        }
-      }, 1000);
-      setTimeout(() => clearInterval(checkInterval), 15000);
-    }
+
+            log("Injecting...");
+            editor.focus();
+            document.execCommand('insertText', false, prompt);
+          }
+          
+          if (attempts > 30) clearInterval(checkInterval);
+        }, 1000);
+      }
+    });
   }
 
   let lastProcessedJson = "";
 
   function extractAndSendJson() {
-    const blocks = document.querySelectorAll("pre, code, div.markdown, .message-content");
+    const blocks = document.querySelectorAll("pre, code, div.markdown, .message-content, .model-response-text");
     for (const block of blocks) {
       let text = block.textContent.trim();
       const startIdx = text.indexOf('{'), endIdx = text.lastIndexOf('}');
       if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
         const potentialJson = text.substring(startIdx, endIdx + 1);
         if (potentialJson === lastProcessedJson) continue;
-        if (/"\d+"(\s*):/.test(potentialJson)) {
+        
+        if (/"\d+"(\s*):|'\d+'(\s*):|(\s+)\d+:/.test(potentialJson)) {
           try {
-            const cleanedText = potentialJson.replace(/[\u201C\u201D]/g, '"');
+            const cleanedText = potentialJson.replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'");
             const parsed = JSON.parse(cleanedText);
             log("Valid JSON detected!", parsed);
             lastProcessedJson = potentialJson;
             chrome.runtime.sendMessage({ action: "chatGptResponseReceived", data: parsed, rawJson: cleanedText });
             highlightElement(block, "#4caf50");
-          } catch (e) { if (potentialJson.includes('"1":')) log("Parse Err:", e.message); }
+          } catch (e) { }
         }
       }
     }
