@@ -251,3 +251,27 @@ if (document.getElementById("viewFullLegalBtn")) {
     chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html#legal") });
   });
 }
+
+// Developer Modal Logic
+document.addEventListener("DOMContentLoaded", () => {
+  const devModalBtn = document.getElementById("devModalBtn");
+  const devModal = document.getElementById("devModal");
+  const closeDevModal = document.getElementById("closeDevModal");
+
+  if (devModalBtn && devModal && closeDevModal) {
+    devModalBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      devModal.style.display = "flex";
+    });
+
+    closeDevModal.addEventListener("click", () => {
+      devModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (e) => {
+      if (e.target === devModal) {
+        devModal.style.display = "none";
+      }
+    });
+  }
+});
