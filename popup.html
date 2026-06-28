@@ -2,118 +2,163 @@
 <html>
   <head>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap");
+      @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap");
 
       * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
 
       body {
         width: 480px;
-        font-family: "Outfit", sans-serif;
+        font-family: "Inter", sans-serif;
         padding: 0;
         margin: 0;
-        background: #f5f5f5;
-        color: #202124;
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        color: #e0e0e0;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(ellipse at 20% 50%, rgba(61, 90, 128, 0.15) 0%, transparent 60%),
+                    radial-gradient(ellipse at 80% 20%, rgba(108, 99, 255, 0.1) 0%, transparent 50%),
+                    radial-gradient(ellipse at 50% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+        z-index: 0;
+        pointer-events: none;
       }
 
       .popup-container {
-        background: #f5f5f5;
+        position: relative;
+        z-index: 1;
         min-height: 100vh;
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .popup-header {
-        background: linear-gradient(135deg, #3d5a80 0%, #2d4563 100%);
-        padding: 16px;
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        padding: 18px 20px;
         color: #fff;
-        border-radius: 8px 8px 0 0;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
 
       .header-title {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
+      }
+
+      .header-title svg {
+        color: rgba(255, 255, 255, 0.8);
       }
 
       .popup-header h1 {
         margin: 0;
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: 0px;
+        font-size: 19px;
+        font-weight: 600;
+        font-family: "Playfair Display", serif;
+        letter-spacing: 0.5px;
       }
 
       .popup-header .subtitle {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 400;
-        color: rgba(255, 255, 255, 0.7);
-        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.5);
+        font-family: "Inter", sans-serif;
+        letter-spacing: 1px;
+        margin-top: 2px;
       }
 
       .tabs {
         display: flex;
         gap: 0;
-        background: #fff;
-        border-bottom: 1px solid #e0e0e0;
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         padding: 0;
         width: 100%;
       }
 
       .tab-btn {
         flex: 1;
-        padding: 14px 10px;
+        padding: 14px 8px;
         background: transparent;
         border: none;
-        color: #666;
-        font-size: 11px;
-        font-weight: 600;
-        font-family: "Outfit", sans-serif;
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 10px;
+        font-weight: 500;
+        font-family: "Inter", sans-serif;
         cursor: pointer;
-        border-bottom: 3px solid transparent;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
         margin: 0;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
+        position: relative;
+      }
+
+      .tab-btn::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%) scaleX(0);
+        width: 60%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #6c63ff, transparent);
+        transition: transform 0.3s ease;
+        border-radius: 1px;
       }
 
       .tab-btn.active {
-        color: #3d5a80;
-        border-bottom-color: #3d5a80;
+        color: #fff;
+      }
+
+      .tab-btn.active::after {
+        transform: translateX(-50%) scaleX(1);
       }
 
       .tab-btn:hover {
-        color: #3d5a80;
+        color: rgba(255, 255, 255, 0.7);
       }
 
       .popup-body {
-        padding: 16px;
+        padding: 18px;
         max-height: 500px;
         overflow-y: auto;
-        background: #fff;
-        border-radius: 0 0 8px 8px;
+        background: transparent;
       }
 
       .popup-body::-webkit-scrollbar {
-        width: 6px;
+        width: 4px;
       }
 
       .popup-body::-webkit-scrollbar-track {
-        background: #f5f5f5;
+        background: transparent;
       }
 
       .popup-body::-webkit-scrollbar-thumb {
-        background: #3d5a80;
-        border-radius: 3px;
-      }
-
-      .popup-body::-webkit-scrollbar-thumb:hover {
-        background: #5a7ba8;
+        background: rgba(108, 99, 255, 0.3);
+        border-radius: 2px;
       }
 
       .tab-content {
@@ -122,64 +167,105 @@
 
       .tab-content.active {
         display: block;
+        animation: fadeSlideIn 0.3s ease;
+      }
+
+      @keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
       }
 
       .section {
-        margin-bottom: 16px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 18px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        transition: border-color 0.3s ease;
+      }
+
+      .section:hover {
+        border-color: rgba(255, 255, 255, 0.12);
       }
 
       .section:last-child {
-        border-bottom: none;
         margin-bottom: 0;
-        padding-bottom: 0;
       }
 
       .section-title {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
-        color: #3d5a80;
-        margin-bottom: 8px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 12px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
+      }
+
+      .section-title::before {
+        content: "";
+        width: 3px;
+        height: 14px;
+        background: linear-gradient(180deg, #6c63ff, #3d5a80);
+        border-radius: 2px;
       }
 
       .section-text {
         font-size: 13px;
-        color: #666;
+        color: rgba(255, 255, 255, 0.6);
         line-height: 1.6;
         margin: 0 0 8px 0;
       }
 
       .info-box {
-        background: #e8f1ff;
-        padding: 12px;
-        border-radius: 6px;
+        background: rgba(108, 99, 255, 0.08);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        padding: 14px;
+        border-radius: 10px;
         font-size: 13px;
         margin-bottom: 12px;
-        color: #1a237e;
-        border-left: 4px solid #3d5a80;
-        border: 1px solid #c5d9f1;
-        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(108, 99, 255, 0.15);
+        line-height: 1.6;
       }
 
       .status {
-        padding: 12px;
-        border-radius: 6px;
+        padding: 12px 16px;
+        border-radius: 10px;
         font-size: 13px;
         margin-bottom: 12px;
         display: none;
-        border-left: 4px solid transparent;
+        border: 1px solid transparent;
         line-height: 1.5;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
       }
 
-      .status.success { background: #dcfce7; color: #166534; border-left-color: #22c55e; display: block; }
-      .status.error { background: #fee2e2; color: #991b1b; border-left-color: #ef4444; display: block; }
-      .status.loading { background: #dbeafe; color: #1e40af; border-left-color: #3b82f6; display: block; }
+      .status.success {
+        background: rgba(34, 197, 94, 0.1);
+        color: #86efac;
+        border-color: rgba(34, 197, 94, 0.2);
+        display: block;
+      }
+
+      .status.error {
+        background: rgba(239, 68, 68, 0.1);
+        color: #fca5a5;
+        border-color: rgba(239, 68, 68, 0.2);
+        display: block;
+      }
+
+      .status.loading {
+        background: rgba(59, 130, 246, 0.1);
+        color: #93c5fd;
+        border-color: rgba(59, 130, 246, 0.2);
+        display: block;
+      }
 
       .btn-group {
         display: grid;
@@ -189,86 +275,295 @@
       }
 
       .btn {
-        padding: 11px 14px;
+        padding: 12px 16px;
         border: none;
-        border-radius: 6px;
+        border-radius: 10px;
         font-size: 13px;
-        font-weight: 600;
-        font-family: "Outfit", sans-serif;
+        font-weight: 500;
+        font-family: "Inter", sans-serif;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
+        position: relative;
+        overflow: hidden;
       }
 
-      .btn-primary { background: #3d5a80; color: #fff; }
-      .btn-primary:hover { background: #2d4563; }
-      .btn-success { background: #4caf50; color: #fff; }
-      .btn-success:hover { background: #45a049; }
-      .btn-outline { background: transparent; border: 1px solid #ddd; color: #666; }
-      .btn-outline:hover { background: #f9f9f9; color: #3d5a80; border-color: #3d5a80; }
+      .btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .btn:hover::before {
+        opacity: 1;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #6c63ff, #3d5a80);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(108, 99, 255, 0.4);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+      }
+
+      .btn-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+      }
+
+      .btn-outline {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .btn-outline:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.2);
+      }
 
       .legal-disclaimer {
         font-size: 10px;
-        color: #999;
+        color: rgba(255, 255, 255, 0.3);
         margin-top: 8px;
         text-align: center;
       }
+
       .legal-disclaimer a {
-        color: #3d5a80;
+        color: rgba(108, 99, 255, 0.7);
         text-decoration: none;
+        transition: color 0.3s;
+      }
+
+      .legal-disclaimer a:hover {
+        color: rgba(108, 99, 255, 1);
       }
 
       /* History Styles */
       .history-item {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
         margin-bottom: 12px;
         overflow: hidden;
+        transition: border-color 0.3s ease;
       }
+
+      .history-item:hover {
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+
       .history-header {
-        background: #f8f9fa;
-        padding: 10px 12px;
+        padding: 12px 14px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         cursor: pointer;
+        transition: background 0.3s;
       }
-      .history-header h4 { margin: 0; font-size: 14px; color: #333; }
-      .history-header span { font-size: 11px; color: #999; }
+
+      .history-header:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .history-header h4 {
+        margin: 0;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.85);
+        font-family: "Playfair Display", serif;
+        font-weight: 600;
+      }
+
+      .history-header span {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.3);
+      }
+
       .history-content {
-        padding: 12px;
+        padding: 14px;
         display: none;
-        background: #fff;
+        background: rgba(0, 0, 0, 0.15);
         max-height: 300px;
         overflow-y: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
       }
-      .history-item.open .history-content { display: block; }
-      .history-q-row { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dotted #eee; }
-      .history-q-row:last-child { border-bottom: none; margin-bottom: 0; }
-      .history-q { font-weight: 600; font-size: 12px; color: #3d5a80; margin-bottom: 4px; }
-      .history-a { font-size: 12px; color: #555; background: #f9f9f9; padding: 6px; border-radius: 4px; }
-      .empty-history { text-align: center; padding: 40px 20px; color: #999; }
-      
-      .export-btn-container { margin-top: 10px; }
+
+      .history-item.open .history-content {
+        display: block;
+        animation: fadeSlideIn 0.2s ease;
+      }
+
+      .history-q-row {
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      }
+
+      .history-q-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+
+      .history-q {
+        font-weight: 600;
+        font-size: 12px;
+        color: rgba(108, 99, 255, 0.8);
+        margin-bottom: 4px;
+      }
+
+      .history-a {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 6px 10px;
+        border-radius: 6px;
+        line-height: 1.5;
+      }
+
+      .empty-history {
+        text-align: center;
+        padding: 40px 20px;
+        color: rgba(255, 255, 255, 0.3);
+        font-style: italic;
+        font-family: "Playfair Display", serif;
+        font-size: 14px;
+      }
+
+      .export-btn-container {
+        margin-top: 10px;
+      }
 
       select, textarea {
         width: 100%;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        font-family: inherit;
+        padding: 11px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-family: "Inter", sans-serif;
         font-size: 13px;
-        background: #fff;
+        background: rgba(0, 0, 0, 0.2);
+        color: rgba(255, 255, 255, 0.85);
+        transition: all 0.3s;
+        outline: none;
       }
-      textarea#gf-output {
-        height: 100px;
-        resize: vertical;
-        font-family: monospace;
-        background: #f9f9f9;
-        margin-bottom: 12px;
+
+      select:focus, textarea:focus {
+        border-color: rgba(108, 99, 255, 0.5);
+        box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+      }
+
+      select option {
+        background: #1a1a2e;
+        color: #e0e0e0;
+      }
+
+      #dashboard {
+        background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(61, 90, 128, 0.15)) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #fff !important;
+        padding: 20px !important;
+        border-radius: 14px !important;
+        margin-bottom: 20px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+      }
+
+      #dashboard div:first-child {
+        font-size: 10px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        opacity: 0.6 !important;
+        font-family: "Inter", sans-serif !important;
+      }
+
+      #totalTimeSaved {
+        font-size: 34px !important;
+        font-weight: 700 !important;
+        font-family: "Playfair Display", serif !important;
+        letter-spacing: 0 !important;
+      }
+
+      #totalFormsFilled {
+        font-size: 12px !important;
+        opacity: 0.6 !important;
+        font-family: "Inter", sans-serif !important;
+      }
+
+      label {
+        display: flex !important;
+        align-items: center !important;
+        cursor: pointer !important;
+        font-size: 13px !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        gap: 10px !important;
+        padding: 4px 0 !important;
+      }
+
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #6c63ff;
+        cursor: pointer;
+      }
+
+      #diagStatus {
+        font-size: 10px !important;
+        color: rgba(108, 99, 255, 0.7) !important;
+        font-weight: 500 !important;
+        margin-top: 6px !important;
+      }
+
+      #devModal > div {
+        background: rgba(30, 30, 60, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+        width: 340px !important;
+      }
+
+      #devModal h2 {
+        font-family: "Playfair Display", serif !important;
+        color: #fff !important;
+        font-size: 20px !important;
+        font-weight: 600 !important;
+      }
+
+      #devModal div[style*="font-weight: 600"] {
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+
+      .popup-container > div:last-child {
+        border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+        background: rgba(0, 0, 0, 0.2) !important;
+        color: rgba(255, 255, 255, 0.4) !important;
+        font-size: 11px !important;
       }
     </style>
   </head>
@@ -298,6 +593,10 @@
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           <span>Settings</span>
         </button>
+        <button class="tab-btn" data-tab="diagnostics">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          <span>Diagnostics</span>
+        </button>
         <button class="tab-btn" data-tab="clear">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
           <span>Clear</span>
@@ -312,15 +611,9 @@
             <select id="gf-ai-type" style="margin-bottom:12px;">
               <option value="chatgpt">OpenAI ChatGPT</option>
               <option value="claude">Anthropic Claude 3.5</option>
-              <option value="gemini">Google Gemini 1.5</option>
+              <option value="gemini" selected>Google Gemini 1.5</option>
             </select>
             <button id="gf-scan-btn" class="btn btn-primary" style="width:100%;">Scan & Extract Questions</button>
-            <div class="legal-disclaimer">By clicking, you agree to our <a href="welcome.html#legal" target="_blank">Privacy & Terms</a>.</div>
-          </div>
-          <div class="section">
-            <div class="section-title">AI Intelligence Data</div>
-            <textarea id="gf-output" placeholder="Paste response JSON here..."></textarea>
-            <button id="gf-fill-btn" class="btn btn-success" style="width:100%;">Fill Form Now</button>
             <div class="legal-disclaimer">By clicking, you agree to our <a href="welcome.html#legal" target="_blank">Privacy & Terms</a>.</div>
           </div>
           <div id="engineStatus" class="status"></div>
@@ -328,7 +621,7 @@
 
         <!-- History Tab -->
         <div id="history" class="tab-content">
-          <div class="section" id="dashboard" style="background: linear-gradient(135deg, #3d5a80 0%, #2d4563 100%); color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+          <div class="section" id="dashboard">
             <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px;">Human Time Saved</div>
             <div id="totalTimeSaved" style="font-size: 32px; font-weight: 700;">0m 0s</div>
             <div id="totalFormsFilled" style="font-size: 12px; opacity: 0.8; margin-top: 5px;">0 forms automated</div>
@@ -354,33 +647,75 @@
 
           <div class="section">
             <div class="section-title">Filling Mode</div>
-            <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; margin-bottom:8px;">
-              <input type="checkbox" id="humanTyping" style="margin-right:8px;" checked />
+            <label>
+              <input type="checkbox" id="humanTyping" checked />
               Simulate Human Typing (Bypass Detection)
             </label>
-            <label style="display:flex; align-items:center; cursor:pointer; font-size:12px;">
-              <input type="checkbox" id="verboseLogging" style="margin-right:8px;" checked />
+            <label>
+              <input type="checkbox" id="verboseLogging" checked />
               Verbose Logging (Development Mode)
             </label>
           </div>
 
           <div class="section">
             <div class="section-title">Diagnostic Control</div>
-            <label style="display:flex; align-items:center; cursor:pointer; font-size:12px; margin-bottom:8px;">
-              <input type="checkbox" id="diagnosticToggle" style="margin-right:8px;" checked />
+            <label>
+              <input type="checkbox" id="diagnosticToggle" checked />
               Diagnostic
             </label>
-            <div id="diagStatus" style="font-size: 10px; color: #3d5a80; font-weight: 600;"></div>
+            <div id="diagStatus"></div>
           </div>
 
           <div class="section">
             <div class="section-title">Custom Instructions</div>
-            <textarea id="customPrompt" placeholder="e.g. Provide short answers only..." style="height:60px; resize:vertical;"></textarea>
+            <textarea id="customPrompt" placeholder="e.g. Provide short answers only..." style="height:60px; resize:vertical;" maxlength="500"></textarea>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px;">
+              <span>Max 500 characters</span>
+              <span id="charCount">0/500</span>
+            </div>
           </div>
 
           <div class="section">
             <button id="saveSettings" class="btn btn-primary" style="width: 100%;">Save Settings</button>
             <div id="settingsStatus" class="status"></div>
+          </div>
+        </div>
+
+        <!-- Diagnostics Tab -->
+        <div id="diagnostics" class="tab-content">
+          <div class="section">
+            <div class="section-title">Live Diagnostics</div>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+              <button id="diagRefreshBtn" class="btn btn-outline" style="flex:1; font-size:11px; padding:8px;">
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                Refresh
+              </button>
+              <button id="diagClearBtn" class="btn btn-outline" style="flex:1; font-size:11px; padding:8px;">
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Clear
+              </button>
+            </div>
+            <div id="diagSummary" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+              <div style="background:rgba(108,99,255,0.08); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:10px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px;">Forms Scanned</div>
+                <div id="diagFormsScanned" style="font-size:24px; font-weight:600; color:#fff; font-family:'Playfair Display',serif; margin-top:4px;">0</div>
+              </div>
+              <div style="background:rgba(34,197,94,0.08); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:10px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px;">Forms Filled</div>
+                <div id="diagFormsFilled" style="font-size:24px; font-weight:600; color:#86efac; font-family:'Playfair Display',serif; margin-top:4px;">0</div>
+              </div>
+              <div style="background:rgba(59,130,246,0.08); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:10px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px;">AI Responses</div>
+                <div id="diagAiResponses" style="font-size:24px; font-weight:600; color:#93c5fd; font-family:'Playfair Display',serif; margin-top:4px;">0</div>
+              </div>
+              <div style="background:rgba(239,68,68,0.08); border-radius:10px; padding:12px; text-align:center;">
+                <div style="font-size:10px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px;">Errors</div>
+                <div id="diagErrors" style="font-size:24px; font-weight:600; color:#fca5a5; font-family:'Playfair Display',serif; margin-top:4px;">0</div>
+              </div>
+            </div>
+            <div id="diagLogList" style="max-height:280px; overflow-y:auto;">
+              <div class="empty-history">No diagnostic data yet. Use the extension to generate logs.</div>
+            </div>
           </div>
         </div>
 
@@ -397,7 +732,7 @@
 
       <!-- Footer Credit -->
       <div style="padding: 10px; text-align: center; border-top: 1px solid #e0e0e0; background: #fff; font-size: 11px; color: #666;">
-        Developed by <a href="#" id="devModalBtn" style="color: #3d5a80; text-decoration: none; font-weight: 600;">chqrlzz</a>
+        Developed by <a href="#" id="devModalBtn" style="color: #3d5a80; text-decoration: none; font-weight: 600;">drnx64</a>
       </div>
     </div>
 
@@ -406,9 +741,9 @@
       <div style="background: #fff; padding: 24px; border-radius: 12px; width: 320px; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
         <h2 style="margin-top: 0; color: #3d5a80; font-size: 20px;">About the Developer</h2>
         <div style="margin: 20px 0;">
-          <div style="font-weight: 600; font-size: 16px; color: #333;">chqrlzz</div>
+          <div style="font-weight: 600; font-size: 16px; color: #333;">drnx64</div>
           <div style="margin-top: 8px;">
-            <a href="https://t.me/chqrlzz" target="_blank" style="color: #0088cc; text-decoration: none; font-size: 14px;">Telegram: chqrlzz</a>
+            <a href="https://t.me/drnx64" target="_blank" style="color: #0088cc; text-decoration: none; font-size: 14px;">Telegram: drnx64</a>
           </div>
         </div>
         <div style="font-size: 12px; color: #999; margin-bottom: 24px;">Project Version: 4.3.0</div>

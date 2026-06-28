@@ -20,7 +20,7 @@ if exist ".git" (
 
 :: Fallback: PowerShell Download & Extract
 echo 🌐 Downloading latest version from GitHub...
-set "repo_url=https://github.com/psychiotric-sudo/GFormsToGPT/archive/refs/heads/main.zip"
+set "repo_url=https://github.com/drnx64/GFormsToGPT/archive/refs/heads/main.zip"
 set "temp_zip=%temp%\gform_update.zip"
 set "extract_path=%temp%\gform_extracted"
 

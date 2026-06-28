@@ -9,7 +9,7 @@ Scan Google Forms, filter personal questions, and auto-fill with ChatGPT, Claude
 Run the following command in PowerShell to automatically download, extract, and deploy GFormsToGPT to your system (**Auto-Elevates to Admin** if needed):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "irm -useb https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/main/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -Command "irm -useb https://raw.githubusercontent.com/drnx64/GFormsToGPT/main/install.ps1 | iex"
 ```
 
 *This installs the extension to `C:\ProgramData\GFormsToGPT` for universal access and opens your browser's extensions page.*
@@ -42,4 +42,4 @@ powershell -ExecutionPolicy Bypass -Command "irm -useb https://raw.githubusercon
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
-Developed with ❤️ by chqrlzz
+Developed with ❤️ by drnx64

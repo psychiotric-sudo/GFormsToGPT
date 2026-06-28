@@ -12,6 +12,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
       targetTab.classList.add("active");
       btn.classList.add("active");
       if (tabName === "history") loadHistory();
+      if (tabName === "diagnostics") loadDiagnostics();
     }
   });
 });
@@ -75,7 +76,7 @@ function exportEntry(entry) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${(entry.formTitle || "Form").replace(/[^a-z0-9]/gi, '_')}_history.txt`;
+  a.download = `${(entry.formTitle || "Untitled_Form").replace(/[^a-z0-9]/gi, '_')}_history.txt`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -84,9 +85,7 @@ function exportEntry(entry) {
 
 // ── Engine Logic ──
 const scanBtn = document.getElementById("gf-scan-btn");
-const fillBtn = document.getElementById("gf-fill-btn");
 const aiTypeSelect = document.getElementById("gf-ai-type");
-const outputTextarea = document.getElementById("gf-output");
 const engineStatus = document.getElementById("engineStatus");
 
 function showEngineStatus(msg, type = "loading") {
@@ -98,8 +97,9 @@ function showEngineStatus(msg, type = "loading") {
 
 if (scanBtn) {
   scanBtn.onclick = async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.url.includes("docs.google.com/forms")) {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const tab = tabs[0];
+    if (!tab || !tab.url || !tab.url.includes("docs.google.com/forms")) {
       showEngineStatus("Please open a Google Form first.", "error");
       return;
     }
@@ -119,7 +119,11 @@ if (scanBtn) {
         else if (aiType === "gemini") url = `https://gemini.google.com/app`;
         else url = `https://chatgpt.com/`;
 
-        await chrome.storage.local.set({ pendingPrompt: response.prompt, pendingAiType: aiType, lastGFormTabId: tab.id });
+        const toStore = { pendingPrompt: response.prompt, pendingAiType: aiType, lastGFormTabId: tab.id };
+        if (aiType === "gemini" && response.images && Object.keys(response.images).length > 0) {
+          toStore.pendingImages = response.images;
+        }
+        await chrome.storage.local.set(toStore);
 
         setTimeout(() => {
           showEngineStatus("Redirecting to AI...");
@@ -127,40 +131,6 @@ if (scanBtn) {
         }, 800);
       } else {
         showEngineStatus(response?.error || "Scan failed.", "error");
-      }
-    });
-  };
-}
-
-if (fillBtn) {
-  fillBtn.onclick = async () => {
-    const raw = outputTextarea.value.trim();
-    if (!raw) {
-      showEngineStatus("Please paste the AI JSON response first.", "error");
-      return;
-    }
-
-    let answers;
-    try {
-      const startIdx = raw.indexOf('{'), endIdx = raw.lastIndexOf('}');
-      if (startIdx === -1 || endIdx === -1) throw new Error("No JSON boundaries");
-      answers = JSON.parse(raw.substring(startIdx, endIdx + 1));
-    } catch (e) {
-      showEngineStatus("Invalid JSON format.", "error");
-      return;
-    }
-
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) return;
-
-    showEngineStatus("Injecting responses...", "loading");
-    chrome.tabs.sendMessage(tab.id, { action: "fillForm", answers }, (response) => {
-      if (chrome.runtime.lastError) { showEngineStatus("Connection lost. Refresh.", "error"); return; }
-      if (response && response.success) {
-        showEngineStatus(`Filled ${response.filled}/${response.total} questions.`, "success");
-        loadHistory();
-      } else {
-        showEngineStatus("Filling failed.", "error");
       }
     });
   };
@@ -176,11 +146,30 @@ const settingsStatus = document.getElementById("settingsStatus");
 const checkUpdateBtn = document.getElementById("checkUpdateBtn");
 const updateStatus = document.getElementById("updateStatus");
 
+const charCount = document.getElementById("charCount");
+
+function updateCharCount() {
+  if (charCount && customPromptInput) {
+    const len = customPromptInput.value.length;
+    charCount.textContent = `${len}/500`;
+    charCount.style.color = len > 450 ? "rgba(239,68,68,0.6)" : "rgba(255,255,255,0.3)";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   loadHistory();
+
+  chrome.runtime.sendMessage({ action: "fetchUserEmail" });
+
+  if (customPromptInput) {
+    customPromptInput.addEventListener("input", updateCharCount);
+  }
   
   chrome.storage.local.get(["customPrompt", "humanTyping", "verboseLogging", "diagnosticEnabled", "diagnosticCaptured"], (data) => {
-    if (data.customPrompt && customPromptInput) customPromptInput.value = data.customPrompt;
+    if (data.customPrompt && customPromptInput) {
+      customPromptInput.value = data.customPrompt;
+      updateCharCount();
+    }
     
     // Default humanTyping to true if not set
     const humanTypingEnabled = data.humanTyping !== undefined ? data.humanTyping : true;
@@ -252,7 +241,85 @@ if (document.getElementById("viewFullLegalBtn")) {
   });
 }
 
-// Developer Modal Logic
+// ── Diagnostics Tab ──
+const diagRefreshBtn = document.getElementById("diagRefreshBtn");
+const diagClearBtn = document.getElementById("diagClearBtn");
+const diagLogList = document.getElementById("diagLogList");
+const diagFormsScanned = document.getElementById("diagFormsScanned");
+const diagFormsFilled = document.getElementById("diagFormsFilled");
+const diagAiResponses = document.getElementById("diagAiResponses");
+const diagErrors = document.getElementById("diagErrors");
+
+function renderDiagEntry(entry) {
+  const time = new Date(entry.ts).toLocaleTimeString();
+  const typeColors = {
+    form_scanned: "rgba(108,99,255,0.15)",
+    form_filled: "rgba(34,197,94,0.15)",
+    ai_response_received: "rgba(59,130,246,0.15)",
+    ai_prompt_sent: "rgba(59,130,246,0.1)",
+    ai_script_loaded: "rgba(255,255,255,0.05)",
+    ai_prompt_found: "rgba(255,255,255,0.05)",
+    ai_inject_timeout: "rgba(239,68,68,0.15)",
+    form_page_load: "rgba(108,99,255,0.1)",
+    error: "rgba(239,68,68,0.15)",
+    diagnostic_screenshot: "rgba(255,255,255,0.05)",
+  };
+  const bg = typeColors[entry.type] || "rgba(255,255,255,0.03)";
+  
+  let detail = "";
+  if (entry.formTitle) detail = entry.formTitle;
+  else if (entry.platform) detail = `${entry.platform}${entry.responseTime ? ` (${(entry.responseTime/1000).toFixed(1)}s)` : ""}`;
+  else if (entry.questionCount) detail = `${entry.questionCount} questions`;
+  else if (entry.filled !== undefined) detail = `${entry.filled}/${entry.total} filled`;
+  else if (entry.keyCount) detail = `${entry.keyCount} keys`;
+  else if (entry.error) detail = entry.error;
+  else if (entry.url) detail = new URL(entry.url).pathname.split("/").pop() || entry.url;
+  
+  return `
+    <div style="background:${bg}; border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:11px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:rgba(255,255,255,0.7); font-weight:500;">${entry.type.replace(/_/g, " ")}</span>
+        <span style="color:rgba(255,255,255,0.3); font-size:10px;">${time}</span>
+      </div>
+      ${detail ? `<div style="color:rgba(255,255,255,0.5); margin-top:3px; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${detail}</div>` : ""}
+    </div>
+  `;
+}
+
+async function loadDiagnostics() {
+  const res = await chrome.runtime.sendMessage({ action: "diagGetLogs" });
+  const logs = res?.logs || [];
+  
+  if (diagLogList) {
+    if (logs.length === 0) {
+      diagLogList.innerHTML = '<div class="empty-history">No diagnostic data yet.</div>';
+    } else {
+      diagLogList.innerHTML = logs.map(renderDiagEntry).join("");
+    }
+  }
+  
+  const counts = { form_scanned: 0, form_filled: 0, ai_response_received: 0, error: 0 };
+  for (const entry of logs) {
+    if (counts[entry.type] !== undefined) counts[entry.type]++;
+  }
+  if (diagFormsScanned) diagFormsScanned.textContent = counts.form_scanned;
+  if (diagFormsFilled) diagFormsFilled.textContent = counts.form_filled;
+  if (diagAiResponses) diagAiResponses.textContent = counts.ai_response_received;
+  if (diagErrors) diagErrors.textContent = counts.error;
+}
+
+if (diagRefreshBtn) {
+  diagRefreshBtn.addEventListener("click", loadDiagnostics);
+}
+
+if (diagClearBtn) {
+  diagClearBtn.addEventListener("click", async () => {
+    await chrome.runtime.sendMessage({ action: "diagClearLogs" });
+    loadDiagnostics();
+  });
+}
+
+// ── Developer Modal Logic ──
 document.addEventListener("DOMContentLoaded", () => {
   const devModalBtn = document.getElementById("devModalBtn");
   const devModal = document.getElementById("devModal");

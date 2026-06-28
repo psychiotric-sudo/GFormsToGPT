@@ -11,6 +11,14 @@
 
   function log(...args) { if (verboseLogging) console.log("[GFormToGPT Claude]", ...args); }
 
+  function pushDiag(payload) {
+    chrome.runtime.sendMessage({ action: "diagPush", payload }).catch(() => {});
+  }
+
+  pushDiag({ type: "ai_script_loaded", platform: "claude" });
+
+  let promptStartTime = null;
+
   function highlightElement(el, color = "#3d5a80") {
     if (!el) return;
     el.style.outline = `3px solid ${color}`;
@@ -22,6 +30,7 @@
       if (data.pendingPrompt && data.pendingAiType === "claude") {
         const prompt = data.pendingPrompt;
         log("Pending prompt found, attempting injection...");
+        pushDiag({ type: "ai_prompt_found", platform: "claude", promptLength: prompt.length });
 
         let attempts = 0;
         const checkInterval = setInterval(() => {
@@ -38,10 +47,10 @@
                 if (sendBtn && !sendBtn.disabled) {
                     clearInterval(checkInterval);
                     log("Clicking send...");
+                    promptStartTime = Date.now();
                     highlightElement(sendBtn, "#4caf50");
+                    pushDiag({ type: "ai_prompt_sent", platform: "claude", attempts });
                     setTimeout(() => {
-                        sendBtn.dispatchEvent(new MouseEvent('mousedown', {bubbles: true}));
-                        sendBtn.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
                         sendBtn.click();
                         chrome.storage.local.remove(["pendingPrompt", "pendingAiType"]);
                     }, 500);
@@ -54,7 +63,10 @@
             document.execCommand('insertText', false, prompt);
           }
           
-          if (attempts > 30) clearInterval(checkInterval);
+          if (attempts > 30) {
+            clearInterval(checkInterval);
+            pushDiag({ type: "ai_inject_timeout", platform: "claude", attempts });
+          }
         }, 1000);
       }
     });
@@ -79,6 +91,9 @@
             lastProcessedJson = potentialJson;
             chrome.runtime.sendMessage({ action: "chatGptResponseReceived", data: parsed, rawJson: cleanedText });
             highlightElement(block, "#4caf50");
+            const responseTime = promptStartTime ? Date.now() - promptStartTime : null;
+            pushDiag({ type: "ai_response_received", platform: "claude", responseTime, keyCount: Object.keys(parsed).length });
+            promptStartTime = null;
           } catch (e) { }
         }
       }

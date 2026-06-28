@@ -12,6 +12,14 @@
 
   function log(...args) { if (verboseLogging) console.log("[GFormToGPT ChatGPT]", ...args); }
 
+  function pushDiag(payload) {
+    chrome.runtime.sendMessage({ action: "diagPush", payload }).catch(() => {});
+  }
+
+  pushDiag({ type: "ai_script_loaded", platform: "chatgpt" });
+
+  let promptStartTime = null;
+
   function highlightElement(el, color = "#3d5a80") {
     if (!el) return;
     el.style.transition = "all 0.5s ease";
@@ -24,6 +32,7 @@
       if (data.pendingPrompt && (data.pendingAiType === "chatgpt" || !data.pendingAiType)) {
         const prompt = data.pendingPrompt;
         log("Pending prompt found, attempting injection...");
+        pushDiag({ type: "ai_prompt_found", platform: "chatgpt", promptLength: prompt.length });
         
         let attempts = 0;
         const checkInterval = setInterval(() => {
@@ -32,18 +41,18 @@
                           document.querySelector('[contenteditable="true"]');
           const sendBtn = document.querySelector('[data-testid="send-button"]') || 
                           document.querySelector('button[aria-label="Send prompt"]') ||
-                          document.querySelector('button.absolute.bottom-1\\.5');
+                          document.querySelector('[data-testid="send-button"]:not([disabled])');
 
           if (textarea) {
-            // Check if already injected
             if (textarea.textContent.includes("JSON") || textarea.value?.includes("JSON")) {
                 if (sendBtn && !sendBtn.disabled) {
                     clearInterval(checkInterval);
                     log("Clicking send...");
+                    promptStartTime = Date.now();
                     highlightElement(sendBtn, "#4caf50");
+                    pushDiag({ type: "ai_prompt_sent", platform: "chatgpt", attempts });
                     setTimeout(() => { 
                         sendBtn.click();
-                        sendBtn.dispatchEvent(new MouseEvent('click', {bubbles: true}));
                         chrome.storage.local.remove(["pendingPrompt", "pendingAiType"]);
                     }, 500);
                 }
@@ -56,7 +65,10 @@
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
           }
           
-          if (attempts > 30) clearInterval(checkInterval);
+          if (attempts > 30) {
+            clearInterval(checkInterval);
+            pushDiag({ type: "ai_inject_timeout", platform: "chatgpt", attempts });
+          }
         }, 1000);
       }
     });
@@ -80,7 +92,10 @@
             log("Valid JSON detected!", parsed);
             lastProcessedJson = potentialJson;
             highlightElement(block, "#4caf50");
+            const responseTime = promptStartTime ? Date.now() - promptStartTime : null;
             chrome.runtime.sendMessage({ action: "chatGptResponseReceived", data: parsed, rawJson: cleanedText });
+            pushDiag({ type: "ai_response_received", platform: "chatgpt", responseTime, keyCount: Object.keys(parsed).length });
+            promptStartTime = null;
           } catch (e) { }
         }
       }
@@ -92,9 +107,9 @@
     const target = document.querySelector("main") || document.body;
     observer.observe(target, { childList: true, subtree: true });
     autoSubmitPrompt();
+    setInterval(extractAndSendJson, 2000);
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startObserving);
   else startObserving();
-  setInterval(extractAndSendJson, 2000);
 })();

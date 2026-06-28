@@ -3,7 +3,7 @@
   "name": "GForm to GPT",
   "version": "4.3.0",
   "description": "Scan Google Forms, filter personal questions, and auto-fill with ChatGPT responses",
-  "author": "@chqrlzz",
+  "author": "@drnx64",
   "web_accessible_resources": [
     {
       "resources": ["welcome.html", "bg.jpg", "welcome.js", "typed.js", "farewell.html"],
