@@ -5,21 +5,23 @@ $ErrorActionPreference = "Stop"
 $Repo = "drnx64/GFormsToGPT"
 
 # Read token from .env
-$envFile = "$PSScriptRoot\.env"
+$envFile = "C:\Users\ADMIN\Projects\GFORMSTOGPT\.env"
+Write-Host "Looking for .env at: $envFile" -ForegroundColor Cyan
 if (-not (Test-Path $envFile)) {
     Write-Host "ERROR: .env file not found at $envFile" -ForegroundColor Red
     Write-Host "Create it with: GITHUB_TOKEN=ghp_your_token_here" -ForegroundColor Yellow
     exit 1
 }
 
-$envVars = Get-Content $envFile | Where-Object { $_ -match '^GITHUB_TOKEN=' }
-if (-not $envVars) {
+$lines = Get-Content $envFile
+$tokenLine = $lines | Where-Object { $_ -match 'GITHUB_TOKEN=' }
+if (-not $tokenLine) {
     Write-Host "ERROR: GITHUB_TOKEN not found in .env" -ForegroundColor Red
     Write-Host "Add: GITHUB_TOKEN=ghp_your_token_here" -ForegroundColor Yellow
     exit 1
 }
 
-$token = ($envVars[0] -split '=', 2)[1].Trim()
+$token = ($tokenLine -split '=', 2)[1].Trim()
 if ([string]::IsNullOrEmpty($token)) {
     Write-Host "ERROR: GITHUB_TOKEN is empty" -ForegroundColor Red
     exit 1
